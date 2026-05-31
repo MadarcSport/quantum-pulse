@@ -55,7 +55,7 @@ export default async function NewsPage() {
                   <h2 className={styles.cardTitle}>{article.title}</h2>
                 </div>
 
-                <p className={styles.cardIntro}>{article.intro}</p>
+                <p className={styles.cardIntro}>{article.summary}</p>
 
                 <p className={styles.cardCta}>Read article</p>
               </article>

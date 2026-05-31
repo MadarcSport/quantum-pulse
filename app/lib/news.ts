@@ -12,6 +12,7 @@ export type NewsArticle = {
   title: string;
   date: string;
   intro: string;
+  summary: string;
   sections: NewsSection[];
   conclusion: string;
   thumbnailImageUrl?: string;
@@ -126,16 +127,44 @@ function mergeImageConfig(slug: string, imageConfig?: NewsImageConfig) {
   };
 }
 
+function createSummary(text: string, maxLength = 260) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  const chunk = normalized.slice(0, maxLength + 1);
+  const sentenceEnd = Math.max(
+    chunk.lastIndexOf(". "),
+    chunk.lastIndexOf("! "),
+    chunk.lastIndexOf("? "),
+  );
+
+  if (sentenceEnd > maxLength * 0.55) {
+    return chunk.slice(0, sentenceEnd + 1).trim();
+  }
+
+  return `${normalized.slice(0, maxLength).trimEnd()}...`;
+}
+
 function createFallbackArticle(
   slug: string,
   markdown: string,
   imageConfig?: NewsImageConfig,
 ): NewsArticle {
+  const normalizedMarkdown = markdown.trim();
+
   return {
     slug,
     title: slug,
     date: "",
-    intro: markdown.trim(),
+    intro: normalizedMarkdown,
+    summary: createSummary(normalizedMarkdown),
     sections: [],
     conclusion: "",
     ...mergeImageConfig(slug, imageConfig),
@@ -181,6 +210,7 @@ function parseArticle(slug: string, markdown: string): NewsArticle {
       title,
       date,
       intro: articleBody,
+      summary: createSummary(articleBody),
       sections: [],
       conclusion: "",
       ...mergeImageConfig(slug, imageConfig),
@@ -236,6 +266,7 @@ function parseArticle(slug: string, markdown: string): NewsArticle {
     title,
     date,
     intro,
+    summary: createSummary(intro),
     sections,
     conclusion,
     ...mergeImageConfig(slug, imageConfig),
