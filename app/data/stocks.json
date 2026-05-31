@@ -1,0 +1,20 @@
+[
+  {
+    "symbol": "QUBT",
+    "name": "Quantum Computing Inc.",
+    "enabled": true,
+    "showChart": true
+  },
+  {
+    "symbol": "RGTI",
+    "name": "Rigetti Computing Inc.",
+    "enabled": true,
+    "showChart": true
+  },
+  {
+    "symbol": "MSFT",
+    "name": "Microsoft Corp.",
+    "enabled": false,
+    "showChart": false
+  }
+]
