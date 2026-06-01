@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BrandLogo } from "./components/brand-logo";
 import { TopNav } from "./components/top-nav";
 import "./globals.css";
 
@@ -19,7 +20,7 @@ export default function RootLayout({
         <header
           style={{
             position: "sticky",
-            top: 0,
+            top: 10,
             zIndex: 40,
             backdropFilter: "blur(18px)",
             background: "rgba(2, 6, 23, 0.78)",
@@ -41,6 +42,9 @@ export default function RootLayout({
             <Link
               href="/"
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
                 color: "#f8fafc",
                 fontSize: 15,
                 fontWeight: 800,
@@ -48,7 +52,8 @@ export default function RootLayout({
                 textTransform: "uppercase",
               }}
             >
-              Quantum Pulse
+              <BrandLogo size={65} />
+              <span>Quantum Pulse</span>
             </Link>
 
             <TopNav />

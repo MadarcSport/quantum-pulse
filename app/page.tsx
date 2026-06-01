@@ -1,4 +1,5 @@
 import { HeroSection } from "./components/hero-section";
+import { NewsPreviewSection } from "./components/news-preview-section";
 import { StockSnapshotSection } from "./components/stock-snapshot-section";
 import { fetchAverageVolume90d, fetchStockQuote } from "./lib/stock-quote";
 import { getEnabledStocks } from "./lib/stocks-config";
@@ -62,6 +63,8 @@ export default async function Home() {
             </p>
           </section>
         )}
+
+        <NewsPreviewSection />
 
         <p
           style={{

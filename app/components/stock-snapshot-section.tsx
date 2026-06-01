@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { StockQuote } from "../lib/stock-quote";
 import { StockChartDialog } from "./stock-chart-dialog";
+import styles from "./stock-snapshot-section.module.css";
 
 type StockSnapshotSectionProps = {
   title: string;
@@ -49,6 +50,34 @@ export function StockSnapshotSection({
         ? "#22c55e"
         : "#f87171";
 
+  const stats = quote
+    ? [
+        { label: "Ticker", value: quote.symbol },
+        { label: "Last", value: formatPrice(quote.close), emphasize: true },
+        { label: "Open", value: formatPrice(quote.open) },
+        { label: "High", value: formatPrice(quote.high) },
+        { label: "Low", value: formatPrice(quote.low) },
+        { label: "Volume", value: formatNumber(quote.volume) },
+        {
+          label: "Avg Volume (90d)",
+          value:
+            avgVolume90d !== null
+              ? formatNumber(Math.round(avgVolume90d))
+              : "N/A",
+        },
+        {
+          label: "Volume vs 90d Avg",
+          value:
+            volumeDeltaPct !== null
+              ? `${volumeDeltaPct >= 0 ? "+" : ""}${volumeDeltaPct.toFixed(1)}%`
+              : "N/A",
+          color: volumeDeltaColor,
+        },
+        { label: "Date", value: quote.date },
+        { label: "Time", value: quote.time },
+      ]
+    : [];
+
   useEffect(() => {
     if (!isChartOpen) {
       return;
@@ -69,36 +98,11 @@ export function StockSnapshotSection({
 
   return (
     <>
-      <section
-        style={{
-          border: "1px solid rgba(148, 163, 184, 0.2)",
-          borderRadius: 16,
-          background: "rgba(15, 23, 42, 0.72)",
-          padding: 20,
-          display: "grid",
-          gap: 14,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "grid", gap: 4 }}>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "1.25rem",
-                color: "#f8fafc",
-              }}
-            >
-              {title} Snapshot
-            </h2>
-            <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
+      <section className={styles.sectionCard}>
+        <div className={styles.headerRow}>
+          <div className={styles.titleWrap}>
+            <h2 className={styles.title}>{title} Snapshot</h2>
+            <p className={styles.source}>
               Source: {quote ? toSourceLabel(quote.source) : "N/A"} (cached 60s)
             </p>
           </div>
@@ -107,16 +111,7 @@ export function StockSnapshotSection({
             <button
               type="button"
               onClick={() => setIsChartOpen(true)}
-              style={{
-                border: "1px solid rgba(56, 189, 248, 0.55)",
-                background: "rgba(14, 165, 233, 0.16)",
-                color: "#e0f2fe",
-                borderRadius: 999,
-                padding: "8px 16px",
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
+              className={styles.chartButton}
             >
               Chart
             </button>
@@ -124,76 +119,24 @@ export function StockSnapshotSection({
         </div>
 
         {quote ? (
-          <div
-            style={{
-              display: "grid",
-              gap: 10,
-              gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
-            }}
-          >
-            <div>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 12 }}>
-                Ticker
-              </p>
-              <p style={{ margin: "4px 0 0", fontWeight: 700 }}>
-                {quote.symbol}
-              </p>
-            </div>
-            <div>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 12 }}>Last</p>
-              <p style={{ margin: "4px 0 0", fontWeight: 700 }}>
-                {formatPrice(quote.close)}
-              </p>
-            </div>
-            <div>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 12 }}>Open</p>
-              <p style={{ margin: "4px 0 0" }}>{formatPrice(quote.open)}</p>
-            </div>
-            <div>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 12 }}>High</p>
-              <p style={{ margin: "4px 0 0" }}>{formatPrice(quote.high)}</p>
-            </div>
-            <div>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 12 }}>Low</p>
-              <p style={{ margin: "4px 0 0" }}>{formatPrice(quote.low)}</p>
-            </div>
-            <div>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 12 }}>
-                Volume
-              </p>
-              <p style={{ margin: "4px 0 0" }}>{formatNumber(quote.volume)}</p>
-            </div>
-            <div>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 12 }}>
-                Avg Volume (90d)
-              </p>
-              <p style={{ margin: "4px 0 0" }}>
-                {avgVolume90d !== null
-                  ? formatNumber(Math.round(avgVolume90d))
-                  : "N/A"}
-              </p>
-            </div>
-            <div>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 12 }}>
-                Volume vs 90d Avg
-              </p>
-              <p style={{ margin: "4px 0 0", color: volumeDeltaColor }}>
-                {volumeDeltaPct !== null
-                  ? `${volumeDeltaPct >= 0 ? "+" : ""}${volumeDeltaPct.toFixed(1)}%`
-                  : "N/A"}
-              </p>
-            </div>
-            <div>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 12 }}>Date</p>
-              <p style={{ margin: "4px 0 0" }}>{quote.date}</p>
-            </div>
-            <div>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 12 }}>Time</p>
-              <p style={{ margin: "4px 0 0" }}>{quote.time}</p>
-            </div>
+          <div className={styles.statsGrid}>
+            {stats.map((stat) => (
+              <div key={stat.label} className={styles.statItem}>
+                <p className={styles.statLabel}>{stat.label}</p>
+                <p
+                  className={styles.statValue}
+                  style={{
+                    fontWeight: stat.emphasize ? 700 : 600,
+                    color: stat.color ?? "#e2e8f0",
+                  }}
+                >
+                  {stat.value}
+                </p>
+              </div>
+            ))}
           </div>
         ) : (
-          <p style={{ margin: 0, color: "#fda4af" }}>
+          <p className={styles.errorText}>
             {title} quote is temporarily unavailable.
           </p>
         )}

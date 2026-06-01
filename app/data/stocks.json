@@ -12,9 +12,9 @@
     "showChart": true
   },
   {
-    "symbol": "MSFT",
-    "name": "Microsoft Corp.",
-    "enabled": false,
-    "showChart": false
+    "symbol": "QBTS",
+    "name": "D-Wave Quantum Inc.",
+    "enabled": true,
+    "showChart": true
   }
 ]

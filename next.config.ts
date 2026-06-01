@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "gitlab.com",
+      },
+      {
+        protocol: "https",
         hostname: "drive.google.com",
       },
       {
