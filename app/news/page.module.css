@@ -129,6 +129,12 @@
   color: #f8fafc;
   font-size: 1.45rem;
   line-height: 1.2;
+  min-height: calc(1.2em * 2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .cardIntro {

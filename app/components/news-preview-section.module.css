@@ -80,6 +80,27 @@
   color: #f8fafc;
   font-size: 1rem;
   line-height: 1.35;
+  min-height: calc(1.35em * 2);
+  max-height: calc((1.35em * 2) + 26px);
+  overflow: hidden;
+  position: relative;
+  display: block;
+}
+
+.articleTitle::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 16px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0),
+    rgba(15, 23, 42, 0.88) 70%
+  );
+  backdrop-filter: blur(1.5px);
 }
 
 .empty {
@@ -153,8 +174,6 @@
   }
 
   .articleTitle {
-    display: grid;
-    align-content: center;
     padding: 12px;
     font-size: 0.96rem;
   }
