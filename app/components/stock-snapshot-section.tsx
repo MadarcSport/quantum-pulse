@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { StockQuote } from "../lib/stock-quote";
+import type { StockCmfMetrics, StockQuote } from "../lib/stock-quote";
 import { StockChartDialog } from "./stock-chart-dialog";
 import styles from "./stock-snapshot-section.module.css";
 
@@ -10,6 +10,7 @@ type StockSnapshotSectionProps = {
   stockName: string;
   quote: StockQuote | null;
   avgVolume90d: number | null;
+  cmfMetrics: StockCmfMetrics;
   showChart?: boolean;
 };
 
@@ -30,14 +31,54 @@ function formatPrice(value: number) {
   }).format(value);
 }
 
+function renderStatItem(
+  stat: {
+    label: string;
+    value: string;
+    color?: string;
+    emphasize?: boolean;
+  },
+  onOpenCmfHelp: () => void,
+) {
+  return (
+    <div key={stat.label} className={styles.statItem}>
+      <p className={styles.statLabel}>
+        <span>{stat.label}</span>
+        {stat.label === "CMF (7d) vs 90d Avg" ? (
+          <button
+            type="button"
+            className={styles.helpIconButton}
+            onClick={onOpenCmfHelp}
+            aria-label="Explain CMF (7d) vs 90d Avg"
+          >
+            ?
+          </button>
+        ) : null}
+      </p>
+      <p
+        className={styles.statValue}
+        style={{
+          fontWeight: stat.emphasize ? 700 : 600,
+          color: stat.color ?? "#e2e8f0",
+        }}
+      >
+        {stat.value}
+      </p>
+    </div>
+  );
+}
+
 export function StockSnapshotSection({
   title,
   stockName,
   quote,
   avgVolume90d,
+  cmfMetrics,
   showChart = true,
 }: StockSnapshotSectionProps) {
   const [isChartOpen, setIsChartOpen] = useState(false);
+  const [isCmfHelpOpen, setIsCmfHelpOpen] = useState(false);
+  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 
   const volumeDeltaPct =
     quote && avgVolume90d && avgVolume90d > 0
@@ -50,13 +91,36 @@ export function StockSnapshotSection({
         ? "#22c55e"
         : "#f87171";
 
+  const cmfDelta =
+    cmfMetrics.cmf7d !== null && cmfMetrics.cmf7dAvg90d !== null
+      ? cmfMetrics.cmf7d - cmfMetrics.cmf7dAvg90d
+      : null;
+  const cmfDeltaColor =
+    cmfDelta === null ? "#94a3b8" : cmfDelta >= 0 ? "#22c55e" : "#f87171";
+
+  const dayChangePct =
+    quote && quote.previousClose > 0
+      ? ((quote.close - quote.previousClose) / quote.previousClose) * 100
+      : null;
+  const dayChangeColor =
+    dayChangePct === null
+      ? "#94a3b8"
+      : dayChangePct >= 0
+        ? "#22c55e"
+        : "#f87171";
+
   const stats = quote
     ? [
-        { label: "Ticker", value: quote.symbol },
+        {
+          label: "% Change (vs Prev Close)",
+          value:
+            dayChangePct !== null
+              ? `${dayChangePct >= 0 ? "+" : ""}${dayChangePct.toFixed(2)}%`
+              : "N/A",
+          color: dayChangeColor,
+        },
         { label: "Last", value: formatPrice(quote.close), emphasize: true },
         { label: "Open", value: formatPrice(quote.open) },
-        { label: "High", value: formatPrice(quote.high) },
-        { label: "Low", value: formatPrice(quote.low) },
         { label: "Volume", value: formatNumber(quote.volume) },
         {
           label: "Avg Volume (90d)",
@@ -73,19 +137,29 @@ export function StockSnapshotSection({
               : "N/A",
           color: volumeDeltaColor,
         },
+        {
+          label: "CMF (7d) vs 90d Avg",
+          value:
+            cmfDelta !== null
+              ? `${cmfDelta >= 0 ? "+" : ""}${cmfDelta.toFixed(3)}`
+              : "N/A",
+          color: cmfDeltaColor,
+        },
         { label: "Date", value: quote.date },
-        { label: "Time", value: quote.time },
       ]
     : [];
+  const primaryStats = stats.slice(0, 2);
+  const extraStats = stats.slice(2);
 
   useEffect(() => {
-    if (!isChartOpen) {
+    if (!isChartOpen && !isCmfHelpOpen) {
       return;
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsChartOpen(false);
+        setIsCmfHelpOpen(false);
       }
     }
 
@@ -94,14 +168,14 @@ export function StockSnapshotSection({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isChartOpen]);
+  }, [isChartOpen, isCmfHelpOpen]);
 
   return (
     <>
       <section className={styles.sectionCard}>
         <div className={styles.headerRow}>
           <div className={styles.titleWrap}>
-            <h2 className={styles.title}>{title} Snapshot</h2>
+            <h2 className={styles.title}>{title} .</h2> {/* stocks name*/}
             <p className={styles.source}>
               Source: {quote ? toSourceLabel(quote.source) : "N/A"} (cached 60s)
             </p>
@@ -119,22 +193,55 @@ export function StockSnapshotSection({
         </div>
 
         {quote ? (
-          <div className={styles.statsGrid}>
-            {stats.map((stat) => (
-              <div key={stat.label} className={styles.statItem}>
-                <p className={styles.statLabel}>{stat.label}</p>
-                <p
-                  className={styles.statValue}
-                  style={{
-                    fontWeight: stat.emphasize ? 700 : 600,
-                    color: stat.color ?? "#e2e8f0",
-                  }}
-                >
-                  {stat.value}
-                </p>
+          <>
+            <div className={styles.desktopStatsGrid}>
+              {stats.map((stat) =>
+                renderStatItem(stat, () => setIsCmfHelpOpen(true)),
+              )}
+            </div>
+
+            <div className={styles.mobileStatsWrap}>
+              <div className={styles.statsGrid}>
+                {primaryStats.map((stat) =>
+                  renderStatItem(stat, () => setIsCmfHelpOpen(true)),
+                )}
               </div>
-            ))}
-          </div>
+
+              {extraStats.length > 0 && !isMobileExpanded ? (
+                <div className={styles.mobileToggleWrap}>
+                  <button
+                    type="button"
+                    className={styles.showMoreButton}
+                    onClick={() => setIsMobileExpanded((current) => !current)}
+                    aria-expanded={isMobileExpanded}
+                  >
+                    {isMobileExpanded ? "Show less" : "Show more"}
+                  </button>
+                </div>
+              ) : null}
+
+              <div
+                className={`${styles.statsGrid} ${styles.mobileExtraGrid} ${isMobileExpanded ? styles.mobileExpanded : ""}`}
+              >
+                {extraStats.map((stat) =>
+                  renderStatItem(stat, () => setIsCmfHelpOpen(true)),
+                )}
+              </div>
+
+              {extraStats.length > 0 && isMobileExpanded ? (
+                <div className={styles.mobileToggleWrap}>
+                  <button
+                    type="button"
+                    className={styles.showMoreButton}
+                    onClick={() => setIsMobileExpanded(false)}
+                    aria-expanded={isMobileExpanded}
+                  >
+                    Show less
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </>
         ) : (
           <p className={styles.errorText}>
             {title} quote is temporarily unavailable.
@@ -204,6 +311,85 @@ export function StockSnapshotSection({
             </div>
 
             <StockChartDialog symbol={title} name={stockName} />
+          </div>
+        </div>
+      ) : null}
+
+      {isCmfHelpOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="CMF explanation"
+          onClick={() => setIsCmfHelpOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 60,
+            background: "rgba(2, 6, 23, 0.76)",
+            display: "grid",
+            alignItems: "center",
+            justifyItems: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: "min(620px, 100%)",
+              borderRadius: 16,
+              border: "1px solid rgba(148, 163, 184, 0.3)",
+              background:
+                "linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98))",
+              boxShadow: "0 20px 70px rgba(2, 6, 23, 0.45)",
+              padding: "16px 18px",
+              display: "grid",
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
+              <h3 style={{ margin: 0, color: "#f8fafc", fontSize: "1rem" }}>
+                CMF (7d) vs 90d Avg
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsCmfHelpOpen(false)}
+                style={{
+                  border: "1px solid rgba(148, 163, 184, 0.35)",
+                  background: "transparent",
+                  color: "#cbd5e1",
+                  borderRadius: 999,
+                  padding: "6px 12px",
+                  fontSize: 12,
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+
+            <p style={{ margin: 0, color: "#cbd5e1", lineHeight: 1.6 }}>
+              This metric compares recent Chaikin Money Flow (CMF) to its recent
+              baseline.
+            </p>
+            <p style={{ margin: 0, color: "#cbd5e1", lineHeight: 1.6 }}>
+              It is calculated as:{" "}
+              <strong>
+                CMF(7d) - average rolling CMF(7d) over the last ~90 trading days
+              </strong>
+              .
+            </p>
+            <p style={{ margin: 0, color: "#cbd5e1", lineHeight: 1.6 }}>
+              Positive values (for example <strong>+0.273</strong>) mean recent
+              money-flow pressure is stronger than the 90-day baseline. Negative
+              values mean weaker pressure.
+            </p>
           </div>
         </div>
       ) : null}

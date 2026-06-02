@@ -31,7 +31,8 @@ export function HeroSection() {
         <h1
           style={{
             margin: "14px 0 12px",
-            fontSize: "clamp(2rem, 5vw, 4rem)",
+            // fontSize: "clamp(2rem, 5vw, 4rem)",
+            fontSize: "clamp(2rem, 5vw, 3rem)",
             lineHeight: 1,
             color: "#38bdf8",
           }}

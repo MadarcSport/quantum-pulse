@@ -32,22 +32,6 @@ type NewsImageConfig = {
   inlineImageAlt?: string;
 };
 
-const ARTICLE_IMAGE_CONFIG: Record<string, NewsImageConfig> = {
-  article01: {
-    thumbnailImageUrl:
-      "https://gitlab.com/madarc-sport/quantum-pulse/-/raw/main/arti001.png?ref_type=heads",
-    thumbnailImageAlt:
-      "Photonic chip concept illustrating portable quantum computing",
-    heroImageUrl:
-      "https://gitlab.com/madarc-sport/quantum-pulse/-/raw/main/arti001.png?ref_type=heads",
-    heroImageAlt:
-      "Photonic chip concept illustrating portable quantum computing",
-    inlineImageUrl:
-      "https://gitlab.com/madarc-sport/quantum-pulse/-/raw/main/arti001bis.png",
-    inlineImageAlt: "Quantum hardware miniaturization illustration",
-  },
-};
-
 function getNewsDirectory() {
   return path.join(process.cwd(), "app", "news");
 }
@@ -120,13 +104,6 @@ function parseFrontmatter(markdown: string) {
   };
 }
 
-function mergeImageConfig(slug: string, imageConfig?: NewsImageConfig) {
-  return {
-    ...ARTICLE_IMAGE_CONFIG[slug],
-    ...imageConfig,
-  };
-}
-
 function createSummary(text: string, maxLength = 260) {
   const normalized = text.replace(/\s+/g, " ").trim();
 
@@ -167,7 +144,7 @@ function createFallbackArticle(
     summary: createSummary(normalizedMarkdown),
     sections: [],
     conclusion: "",
-    ...mergeImageConfig(slug, imageConfig),
+    ...imageConfig,
   };
 }
 
@@ -213,7 +190,7 @@ function parseArticle(slug: string, markdown: string): NewsArticle {
       summary: createSummary(articleBody),
       sections: [],
       conclusion: "",
-      ...mergeImageConfig(slug, imageConfig),
+      ...imageConfig,
     };
   }
 
@@ -269,7 +246,7 @@ function parseArticle(slug: string, markdown: string): NewsArticle {
     summary: createSummary(intro),
     sections,
     conclusion,
-    ...mergeImageConfig(slug, imageConfig),
+    ...imageConfig,
   };
 }
 

@@ -1,9 +1,9 @@
 ---
-thumbnailImageUrl: "https://gitlab.com/madarc-sport/quantum-pulse/-/raw/main/arti001.png?ref_type=heads"
+thumbnailImageUrl: "https://res.cloudinary.com/db7i9febj/image/upload/v1780396301/arti001_adysdi.png"
 thumbnailImageAlt: "Photonic chip concept illustrating portable quantum computing"
-heroImageUrl: "https://gitlab.com/madarc-sport/quantum-pulse/-/raw/main/arti001.png?ref_type=heads"
+heroImageUrl: "https://res.cloudinary.com/db7i9febj/image/upload/v1780396301/arti001_adysdi.png"
 heroImageAlt: "Photonic chip concept illustrating portable quantum computing"
-inlineImageUrl: "https://gitlab.com/madarc-sport/quantum-pulse/-/raw/main/arti001bis.png"
+inlineImageUrl: "https://res.cloudinary.com/db7i9febj/image/upload/v1780396301/arti001bis_ytx0hu.png"
 inlineImageAlt: "Quantum hardware miniaturization illustration"
 ---
 

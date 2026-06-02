@@ -1,9 +1,9 @@
 ---
-thumbnailImageUrl: "https://gitlab.com/madarc-sport/quantum-pulse/-/raw/main/article2bis.png"
+thumbnailImageUrl: "https://res.cloudinary.com/db7i9febj/image/upload/v1780396301/article2bis_jsqb6c.png"
 thumbnailImageAlt: "Short thumbnail description"
-heroImageUrl: "https://gitlab.com/madarc-sport/quantum-pulse/-/raw/main/article2.png?ref_type=heads"
+heroImageUrl: "https://res.cloudinary.com/db7i9febj/image/upload/v1780396301/article2_ondbap.png"
 heroImageAlt: "Hero image description"
-inlineImageUrl: "https://gitlab.com/madarc-sport/quantum-pulse/-/raw/main/article2bis.png"
+inlineImageUrl: "https://res.cloudinary.com/db7i9febj/image/upload/v1780396301/article2bis_jsqb6c.png"
 inlineImageAlt: "Inline image description"
 ---
 

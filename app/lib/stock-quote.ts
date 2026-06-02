@@ -2,12 +2,25 @@ export type StockQuote = {
   symbol: string;
   date: string;
   time: string;
+  previousClose: number;
   open: number;
   high: number;
   low: number;
   close: number;
   volume: number;
   source: "yahoo" | "nasdaq";
+};
+
+export type StockCmfMetrics = {
+  cmf7d: number | null;
+  cmf7dAvg90d: number | null;
+};
+
+type OhlcvPoint = {
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
 };
 
 type NasdaqHistoricalVolumeResponse = {
@@ -30,6 +43,7 @@ type YahooQuoteResponse = {
     result?: Array<{
       symbol?: string;
       regularMarketTime?: number;
+      regularMarketPreviousClose?: number;
       regularMarketPrice?: number;
       regularMarketOpen?: number;
       regularMarketDayHigh?: number;
@@ -45,6 +59,9 @@ type YahooChartResponse = {
       timestamp?: number[];
       indicators?: {
         quote?: Array<{
+          high?: Array<number | null>;
+          low?: Array<number | null>;
+          close?: Array<number | null>;
           volume?: Array<number | null>;
         }>;
       };
@@ -102,6 +119,7 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
     }
 
     const close = row.regularMarketPrice;
+    const previousClose = row.regularMarketPreviousClose;
     const open = row.regularMarketOpen;
     const high = row.regularMarketDayHigh;
     const low = row.regularMarketDayLow;
@@ -110,6 +128,7 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
 
     if (
       !Number.isFinite(close) ||
+      !Number.isFinite(previousClose) ||
       !Number.isFinite(open) ||
       !Number.isFinite(high) ||
       !Number.isFinite(low) ||
@@ -125,6 +144,7 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
       symbol: row.symbol ?? symbol.toUpperCase(),
       date,
       time,
+      previousClose: Number(previousClose),
       open: Number(open),
       high: Number(high),
       low: Number(low),
@@ -185,11 +205,13 @@ export async function fetchStockQuote(
 
   const rows = await fetchNasdaqHistoryRows(symbol);
   const latest = rows[0];
+  const previous = rows[1];
 
-  if (!latest) {
+  if (!latest || !previous) {
     return null;
   }
 
+  const previousClose = parseNasdaqNumber(previous.close ?? "");
   const open = parseNasdaqNumber(latest.open ?? "");
   const high = parseNasdaqNumber(latest.high ?? "");
   const low = parseNasdaqNumber(latest.low ?? "");
@@ -197,6 +219,7 @@ export async function fetchStockQuote(
   const volume = parseNasdaqNumber(latest.volume ?? "");
 
   if (
+    !Number.isFinite(previousClose) ||
     !Number.isFinite(open) ||
     !Number.isFinite(high) ||
     !Number.isFinite(low) ||
@@ -210,6 +233,7 @@ export async function fetchStockQuote(
     symbol: symbol.toUpperCase(),
     date: latest.date ?? "N/A",
     time: "Market Close",
+    previousClose,
     open,
     high,
     low,
@@ -249,6 +273,164 @@ async function fetchYahooAverageVolume90d(
   } catch {
     return null;
   }
+}
+
+async function fetchYahooDailyOhlcv(symbol: string): Promise<OhlcvPoint[]> {
+  try {
+    const response = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${symbol.toUpperCase()}?range=1y&interval=1d&includePrePost=false&events=div%2Csplits`,
+      {
+        next: { revalidate: 60 },
+      },
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const json = (await response.json()) as YahooChartResponse;
+    const quote = json.chart?.result?.[0]?.indicators?.quote?.[0];
+    const highs = quote?.high ?? [];
+    const lows = quote?.low ?? [];
+    const closes = quote?.close ?? [];
+    const volumes = quote?.volume ?? [];
+    const length = Math.min(
+      highs.length,
+      lows.length,
+      closes.length,
+      volumes.length,
+    );
+
+    const points: OhlcvPoint[] = [];
+
+    for (let i = 0; i < length; i += 1) {
+      const high = highs[i];
+      const low = lows[i];
+      const close = closes[i];
+      const volume = volumes[i];
+
+      if (
+        !Number.isFinite(high) ||
+        !Number.isFinite(low) ||
+        !Number.isFinite(close) ||
+        !Number.isFinite(volume)
+      ) {
+        continue;
+      }
+
+      points.push({
+        high: Number(high),
+        low: Number(low),
+        close: Number(close),
+        volume: Number(volume),
+      });
+    }
+
+    return points;
+  } catch {
+    return [];
+  }
+}
+
+async function fetchNasdaqDailyOhlcv(symbol: string): Promise<OhlcvPoint[]> {
+  const rows = await fetchNasdaqHistoryRows(symbol);
+
+  return rows
+    .map((row) => ({
+      high: parseNasdaqNumber(row.high ?? ""),
+      low: parseNasdaqNumber(row.low ?? ""),
+      close: parseNasdaqNumber(row.close ?? ""),
+      volume: parseNasdaqNumber(row.volume ?? ""),
+    }))
+    .filter(
+      (point) =>
+        Number.isFinite(point.high) &&
+        Number.isFinite(point.low) &&
+        Number.isFinite(point.close) &&
+        Number.isFinite(point.volume),
+    )
+    .reverse();
+}
+
+function computeCmf(points: OhlcvPoint[]): number | null {
+  let moneyFlowVolumeSum = 0;
+  let volumeSum = 0;
+
+  for (const point of points) {
+    if (point.volume <= 0) {
+      continue;
+    }
+
+    const spread = point.high - point.low;
+    const moneyFlowMultiplier =
+      spread === 0 ? 0 : (2 * point.close - point.high - point.low) / spread;
+
+    moneyFlowVolumeSum += moneyFlowMultiplier * point.volume;
+    volumeSum += point.volume;
+  }
+
+  if (volumeSum <= 0) {
+    return null;
+  }
+
+  return moneyFlowVolumeSum / volumeSum;
+}
+
+function computeRollingCmfAverage(
+  points: OhlcvPoint[],
+  cmfPeriod: number,
+  lookbackDays: number,
+): number | null {
+  if (points.length < cmfPeriod) {
+    return null;
+  }
+
+  const firstEndIndex = Math.max(cmfPeriod - 1, points.length - lookbackDays);
+  const rollingValues: number[] = [];
+
+  for (let end = firstEndIndex; end < points.length; end += 1) {
+    const start = end - cmfPeriod + 1;
+    const value = computeCmf(points.slice(start, end + 1));
+    if (value !== null) {
+      rollingValues.push(value);
+    }
+  }
+
+  if (rollingValues.length === 0) {
+    return null;
+  }
+
+  const total = rollingValues.reduce((sum, value) => sum + value, 0);
+  return total / rollingValues.length;
+}
+
+function getCmfMetrics(points: OhlcvPoint[]): StockCmfMetrics {
+  const cmf7d = computeCmf(points.slice(-7));
+  const cmf7dAvg90d = computeRollingCmfAverage(points, 7, 90);
+
+  return {
+    cmf7d,
+    cmf7dAvg90d,
+  };
+}
+
+export async function fetchCmfMetrics(
+  symbol: string,
+): Promise<StockCmfMetrics> {
+  const yahooPoints = await fetchYahooDailyOhlcv(symbol);
+  if (yahooPoints.length >= 7) {
+    return getCmfMetrics(yahooPoints);
+  }
+
+  const nasdaqPoints = await fetchNasdaqDailyOhlcv(symbol);
+  if (nasdaqPoints.length >= 7) {
+    return getCmfMetrics(nasdaqPoints);
+  }
+
+  return {
+    cmf7d: null,
+    cmf7dAvg90d: null,
+  };
 }
 
 export async function fetchAverageVolume90d(

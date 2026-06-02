@@ -1,7 +1,11 @@
 import { HeroSection } from "./components/hero-section";
 import { NewsPreviewSection } from "./components/news-preview-section";
 import { StockSnapshotSection } from "./components/stock-snapshot-section";
-import { fetchAverageVolume90d, fetchStockQuote } from "./lib/stock-quote";
+import {
+  fetchAverageVolume90d,
+  fetchCmfMetrics,
+  fetchStockQuote,
+} from "./lib/stock-quote";
 import { getEnabledStocks } from "./lib/stocks-config";
 
 export default async function Home() {
@@ -11,6 +15,7 @@ export default async function Home() {
       ...stock,
       quote: await fetchStockQuote(stock.symbol),
       avgVolume90d: await fetchAverageVolume90d(stock.symbol),
+      cmfMetrics: await fetchCmfMetrics(stock.symbol),
     })),
   );
 
@@ -42,6 +47,7 @@ export default async function Home() {
               stockName={stock.name}
               quote={stock.quote}
               avgVolume90d={stock.avgVolume90d}
+              cmfMetrics={stock.cmfMetrics}
               showChart={stock.showChart}
             />
           ))
