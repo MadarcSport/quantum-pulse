@@ -1,6 +1,45 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ThreeCubeScene } from "./three-cube-scene";
 
 export function HeroSection() {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+
+    const title = titleRef.current;
+    if (!title) {
+      return;
+    }
+
+    const context = gsap.context(() => {
+      gsap.fromTo(
+        title,
+        { y: 36, autoAlpha: 0, filter: "blur(8px)" },
+        {
+          y: 0,
+          autoAlpha: 1,
+          filter: "blur(0px)",
+          delay: 1, // Initial delay before the animation starts
+          duration: 2,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: title,
+            start: "top 85%",
+            toggleActions: "play none none reverse",
+            once: true,
+          },
+        },
+      );
+    });
+
+    return () => context.revert();
+  }, []);
+
   return (
     <>
       <div
@@ -29,12 +68,14 @@ export function HeroSection() {
           React Three Fiber • drei • Draco-ready
         </p>
         <h1
+          ref={titleRef}
           style={{
             margin: "14px 0 12px",
             // fontSize: "clamp(2rem, 5vw, 4rem)",
             fontSize: "clamp(2rem, 5vw, 3rem)",
             lineHeight: 1,
             color: "#38bdf8",
+            willChange: "transform, opacity, filter",
           }}
         >
           Quantum Computing

@@ -8,7 +8,7 @@ function getLinkStyle(isActive: boolean) {
     return {
       padding: "8px 14px",
       borderRadius: 999,
-      border: "1px solid rgba(56, 189, 248, 0.45)",
+      border: "2px solid rgba(56, 189, 248, 0.45)",
       background: "rgba(14, 165, 233, 0.12)",
       color: "#e0f2fe",
       fontSize: 14,

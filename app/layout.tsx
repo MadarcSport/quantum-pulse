@@ -23,6 +23,7 @@ export default function RootLayout({
             top: 10,
             zIndex: 40,
             backdropFilter: "blur(18px)",
+            // background: "rgba(2, 6, 23, 0.78)",
             background: "rgba(2, 6, 23, 0.78)",
             borderBottom: "1px solid rgba(148, 163, 184, 0.14)",
           }}

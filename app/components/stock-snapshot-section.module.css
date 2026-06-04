@@ -1,7 +1,8 @@
 .sectionCard {
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.42);
   border-radius: 16px;
-  background: rgba(15, 23, 42, 0.72);
+  /* background: rgba(15, 23, 42, 0.72); */
+  background: rgba(20, 31, 57, 0.72);
   padding: clamp(14px, 3vw, 20px);
   display: grid;
   gap: 14px;
@@ -23,7 +24,7 @@
 .title {
   margin: 0;
   font-size: 1.2rem;
-  color: #ffc800; /* stock name*/
+  color: #f8f8f8; /* stock name*/
 }
 
 .source {
@@ -95,7 +96,8 @@
 
 .statLabel {
   margin: 0;
-  color: #94a3b8;
+  /* color: #94a3b8; */
+  color: #ffd500;
   font-size: 11px;
   line-height: 1.2;
   display: inline-flex;
