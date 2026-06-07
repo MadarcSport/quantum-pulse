@@ -3,6 +3,7 @@ import stockList from "../data/stocks.json";
 export type StockConfig = {
   symbol: string;
   name: string;
+  logoUrl?: string;
   enabled: boolean;
   showChart?: boolean;
 };

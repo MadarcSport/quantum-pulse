@@ -148,22 +148,85 @@ function createFallbackArticle(
   };
 }
 
-function parseArticle(slug: string, markdown: string): NewsArticle {
-  const { body: parsedBody, imageConfig } = parseFrontmatter(markdown);
-  const normalized = parsedBody.trim();
-  const lines = normalized
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+function isLikelyDateLine(line: string) {
+  const normalized = line.replace(/\|$/, "").trim();
 
-  if (lines.length < 2) {
-    return createFallbackArticle(slug, normalized, imageConfig);
+  if (!normalized) {
+    return false;
   }
 
-  const title = lines[0];
-  const date = lines[1].replace(/\|$/, "").trim();
-  const articleBody = lines.slice(2).join(" ");
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    return true;
+  }
 
+  return /^(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}$/i.test(
+    normalized,
+  );
+}
+
+function splitIntoBlocks(lines: string[]) {
+  const blocks: string[][] = [];
+  let current: string[] = [];
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    if (!line) {
+      if (current.length > 0) {
+        blocks.push(current);
+        current = [];
+      }
+      continue;
+    }
+
+    current.push(line);
+  }
+
+  if (current.length > 0) {
+    blocks.push(current);
+  }
+
+  return blocks;
+}
+
+function isBulletBlock(lines: string[]) {
+  return lines.every((line) => /^[-*]\s+/.test(line));
+}
+
+function toBulletItems(lines: string[]) {
+  return lines
+    .map((line) => line.replace(/^[-*]\s+/, "").trim())
+    .filter(Boolean);
+}
+
+function isLikelyHeadingBlock(lines: string[]) {
+  if (lines.length !== 1) {
+    return false;
+  }
+
+  const line = lines[0];
+  const normalized = line.replace(/^#{1,6}\s+/, "").trim();
+
+  if (!normalized || normalized.length > 90) {
+    return false;
+  }
+
+  if (/^#{1,6}\s+/.test(line)) {
+    return true;
+  }
+
+  if (/^[a-z]/.test(normalized)) {
+    return false;
+  }
+
+  if (/[.?!]$/.test(normalized)) {
+    return false;
+  }
+
+  return true;
+}
+
+function parseLegacyStructuredBody(articleBody: string) {
   const headingMatches = [
     "The Long-Standing Limitation: Quantum Tech’s Bulk",
     "The Game-Changer: Card-Sized Photonic Chips",
@@ -182,16 +245,7 @@ function parseArticle(slug: string, markdown: string): NewsArticle {
   }, -1);
 
   if (firstHeadingIndex === -1) {
-    return {
-      slug,
-      title,
-      date,
-      intro: articleBody,
-      summary: createSummary(articleBody),
-      sections: [],
-      conclusion: "",
-      ...imageConfig,
-    };
+    return null;
   }
 
   const intro = articleBody.slice(0, firstHeadingIndex).trim();
@@ -239,11 +293,119 @@ function parseArticle(slug: string, markdown: string): NewsArticle {
       : articleBody.slice(bottomLineIndex + "The Bottom Line".length).trim();
 
   return {
+    intro,
+    sections,
+    conclusion,
+  };
+}
+
+function parseArticle(slug: string, markdown: string): NewsArticle {
+  const { body: parsedBody, imageConfig } = parseFrontmatter(markdown);
+  const normalized = parsedBody.replace(/\r\n/g, "\n").trim();
+  const rawLines = normalized.split("\n");
+  const nonEmptyLineIndices = rawLines
+    .map((line, index) => ({ line: line.trim(), index }))
+    .filter((entry) => Boolean(entry.line));
+
+  if (nonEmptyLineIndices.length < 1) {
+    return createFallbackArticle(slug, normalized, imageConfig);
+  }
+
+  const title = nonEmptyLineIndices[0].line;
+  const maybeDate = nonEmptyLineIndices[1]?.line ?? "";
+  const hasDate = isLikelyDateLine(maybeDate);
+  const date = hasDate ? maybeDate.replace(/\|$/, "").trim() : "";
+
+  const bodyStartLineIndex =
+    (hasDate ? nonEmptyLineIndices[1]?.index : nonEmptyLineIndices[0].index) +
+    1;
+  const bodyLines = rawLines.slice(bodyStartLineIndex);
+  const blocks = splitIntoBlocks(bodyLines);
+
+  if (blocks.length === 0) {
+    return createFallbackArticle(slug, normalized, imageConfig);
+  }
+
+  let intro = "";
+  const sections: NewsSection[] = [];
+  let currentSection: NewsSection | null = null;
+
+  for (const blockLines of blocks) {
+    const blockText = blockLines.join(" ").trim();
+
+    if (!blockText) {
+      continue;
+    }
+
+    if (isLikelyHeadingBlock(blockLines)) {
+      const heading = blockText.replace(/^#{1,6}\s+/, "").trim();
+      currentSection = {
+        heading,
+        paragraphs: [],
+      };
+      sections.push(currentSection);
+      continue;
+    }
+
+    if (isBulletBlock(blockLines)) {
+      const bullets = toBulletItems(blockLines);
+
+      if (bullets.length === 0) {
+        continue;
+      }
+
+      if (!currentSection) {
+        currentSection = {
+          heading: "Highlights",
+          paragraphs: [],
+          bullets: [],
+        };
+        sections.push(currentSection);
+      }
+
+      currentSection.bullets = [...(currentSection.bullets ?? []), ...bullets];
+      continue;
+    }
+
+    if (!currentSection) {
+      intro = intro ? `${intro}\n\n${blockText}` : blockText;
+      continue;
+    }
+
+    currentSection.paragraphs.push(blockText);
+  }
+
+  let conclusion = "";
+
+  if (sections.length > 0) {
+    const lastSection = sections[sections.length - 1];
+    if (/bottom line|verdict|conclusion/i.test(lastSection.heading)) {
+      const paragraphText = lastSection.paragraphs.join(" ").trim();
+      const bulletText = (lastSection.bullets ?? []).join(" ").trim();
+      conclusion = [paragraphText, bulletText].filter(Boolean).join(" ");
+      sections.pop();
+    }
+  }
+
+  const compactBody = blocks.map((lines) => lines.join(" ").trim()).join(" ");
+
+  if (sections.length === 0) {
+    const legacy = parseLegacyStructuredBody(compactBody);
+    if (legacy) {
+      intro = legacy.intro;
+      sections.push(...legacy.sections);
+      conclusion = legacy.conclusion;
+    }
+  }
+
+  const summarySource = intro || compactBody;
+
+  return {
     slug,
     title,
     date,
     intro,
-    summary: createSummary(intro),
+    summary: createSummary(summarySource),
     sections,
     conclusion,
     ...imageConfig,
@@ -273,9 +435,20 @@ export async function getAllArticles() {
     }),
   );
 
-  return articles.sort((left, right) =>
-    right.date.localeCompare(left.date, "en-US"),
+  return articles.sort(
+    (left, right) => getArticleTimestamp(right) - getArticleTimestamp(left),
   );
+}
+
+function getArticleTimestamp(article: NewsArticle) {
+  const normalized = article.date.replace(/\|$/, "").trim();
+
+  if (!normalized) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const timestamp = Date.parse(normalized);
+  return Number.isFinite(timestamp) ? timestamp : Number.NEGATIVE_INFINITY;
 }
 
 export async function getArticleBySlug(slug: string) {

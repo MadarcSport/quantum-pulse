@@ -28,6 +28,8 @@ function getLinkStyle(isActive: boolean) {
 export function TopNav() {
   const pathname = usePathname();
   const isHomeActive = pathname === "/";
+  const isStocksActive =
+    pathname === "/stocks" || pathname.startsWith("/stocks/");
   const isNewsActive = pathname === "/news" || pathname.startsWith("/news/");
 
   return (
@@ -41,6 +43,9 @@ export function TopNav() {
     >
       <Link href="/" style={getLinkStyle(isHomeActive)}>
         Home
+      </Link>
+      <Link href="/stocks" style={getLinkStyle(isStocksActive)}>
+        Stocks
       </Link>
       <Link href="/news" style={getLinkStyle(isNewsActive)}>
         News

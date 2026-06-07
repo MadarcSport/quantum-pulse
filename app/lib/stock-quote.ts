@@ -14,6 +14,7 @@ export type StockQuote = {
 export type StockCmfMetrics = {
   cmf7d: number | null;
   cmf7dAvg90d: number | null;
+  mfVelocity: number | null;
 };
 
 type OhlcvPoint = {
@@ -404,13 +405,31 @@ function computeRollingCmfAverage(
   return total / rollingValues.length;
 }
 
+function computeMoneyFlowVelocity(points: OhlcvPoint[]): number | null {
+  if (points.length < 8) {
+    return null;
+  }
+
+  const latestCmf7d = computeCmf(points.slice(-7));
+  const previousCmf7d = computeCmf(points.slice(-8, -1));
+
+  if (latestCmf7d === null || previousCmf7d === null) {
+    return null;
+  }
+
+  const denominator = Math.max(Math.abs(previousCmf7d), 0.01);
+  return ((latestCmf7d - previousCmf7d) / denominator) * 100;
+}
+
 function getCmfMetrics(points: OhlcvPoint[]): StockCmfMetrics {
   const cmf7d = computeCmf(points.slice(-7));
   const cmf7dAvg90d = computeRollingCmfAverage(points, 7, 90);
+  const mfVelocity = computeMoneyFlowVelocity(points);
 
   return {
     cmf7d,
     cmf7dAvg90d,
+    mfVelocity,
   };
 }
 
@@ -430,6 +449,7 @@ export async function fetchCmfMetrics(
   return {
     cmf7d: null,
     cmf7dAvg90d: null,
+    mfVelocity: null,
   };
 }
 

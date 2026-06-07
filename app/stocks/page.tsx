@@ -1,15 +1,13 @@
-import Link from "next/link";
-import { HeroSection } from "./components/hero-section";
-import { NewsPreviewSection } from "./components/news-preview-section";
-import { StockSnapshotSection } from "./components/stock-snapshot-section";
+import { HeroSection2 } from "../components/hero-section-2";
+import { StockSnapshotSection } from "../components/stock-snapshot-section";
 import {
   fetchAverageVolume90d,
   fetchCmfMetrics,
   fetchStockQuote,
-} from "./lib/stock-quote";
-import { getEnabledStocks } from "./lib/stocks-config";
+} from "../lib/stock-quote";
+import { getEnabledStocks } from "../lib/stocks-config";
 
-export default async function Home() {
+export default async function StocksPage() {
   const enabledStocks = getEnabledStocks();
   const stocksWithQuotes = await Promise.all(
     enabledStocks.map(async (stock) => ({
@@ -19,7 +17,6 @@ export default async function Home() {
       cmfMetrics: await fetchCmfMetrics(stock.symbol),
     })),
   );
-  const previewStocks = stocksWithQuotes.slice(0, 3);
 
   return (
     <main
@@ -39,10 +36,10 @@ export default async function Home() {
           gap: 28,
         }}
       >
-        <HeroSection />
+        <HeroSection2 />
 
         {stocksWithQuotes.length > 0 ? (
-          previewStocks.map((stock) => (
+          stocksWithQuotes.map((stock) => (
             <StockSnapshotSection
               key={stock.symbol}
               title={stock.symbol}
@@ -72,50 +69,6 @@ export default async function Home() {
             </p>
           </section>
         )}
-
-        {stocksWithQuotes.length > previewStocks.length ? (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Link
-              href="/stocks"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "10px 18px",
-                borderRadius: 999,
-                border: "2px solid rgba(14, 165, 233, 0.6)",
-                color: "#e0f2fe",
-                // color: "#e0f2fe",
-                textDecoration: "none",
-                fontWeight: 700,
-                background: "rgba(14, 165, 233, 0.2)",
-              }}
-            >
-              More Stocks
-            </Link>
-          </div>
-        ) : null}
-
-        <div style={{ marginTop: 20 }}>
-          <NewsPreviewSection />
-        </div>
-
-        <p
-          style={{
-            margin: 0,
-            color: "#94a3b8",
-            fontSize: 12,
-            textAlign: "center",
-          }}
-        >
-          For informational purposes only.
-        </p>
       </section>
     </main>
   );

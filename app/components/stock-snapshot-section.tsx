@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import type { StockCmfMetrics, StockQuote } from "../lib/stock-quote";
+import { StockForecastCard } from "./stock-forecast-card";
 import { StockChartDialog } from "./stock-chart-dialog";
 import styles from "./stock-snapshot-section.module.css";
 
 type StockSnapshotSectionProps = {
   title: string;
   stockName: string;
+  logoUrl?: string;
   quote: StockQuote | null;
   avgVolume90d: number | null;
   cmfMetrics: StockCmfMetrics;
@@ -71,6 +73,7 @@ function renderStatItem(
 export function StockSnapshotSection({
   title,
   stockName,
+  logoUrl,
   quote,
   avgVolume90d,
   cmfMetrics,
@@ -79,6 +82,8 @@ export function StockSnapshotSection({
   const [isChartOpen, setIsChartOpen] = useState(false);
   const [isCmfHelpOpen, setIsCmfHelpOpen] = useState(false);
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+  const [hasLogoError, setHasLogoError] = useState(false);
+  const showLogoFallback = !logoUrl || hasLogoError;
 
   const volumeDeltaPct =
     quote && avgVolume90d && avgVolume90d > 0
@@ -175,10 +180,29 @@ export function StockSnapshotSection({
       <section className={styles.sectionCard}>
         <div className={styles.headerRow}>
           <div className={styles.titleWrap}>
-            <h2 className={styles.title}>{title} .</h2> {/* stocks name*/}
-            <p className={styles.source}>
-              Source: {quote ? toSourceLabel(quote.source) : "N/A"} (cached 60s)
-            </p>
+            <div className={styles.titleRow}>
+              {logoUrl && !hasLogoError ? (
+                <img
+                  src={logoUrl}
+                  alt={`${stockName} logo`}
+                  className={styles.logo}
+                  loading="lazy"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                  onError={() => setHasLogoError(true)}
+                />
+              ) : null}
+              {showLogoFallback ? (
+                <span className={styles.logoFallback} aria-hidden="true">
+                  {title.slice(0, 1)}
+                </span>
+              ) : null}
+
+              <div className={styles.nameBlock}>
+                <h2 className={styles.symbolPrimary}>{title}</h2>
+                <p className={styles.companyName}>{stockName}</p>
+              </div>
+            </div>
           </div>
 
           {showChart ? (
@@ -240,6 +264,19 @@ export function StockSnapshotSection({
                   </button>
                 </div>
               ) : null}
+            </div>
+
+            <div
+              className={`${styles.forecastWrap} ${isMobileExpanded ? styles.forecastExpanded : ""}`}
+            >
+              <p className={styles.sourceMeta}>
+                Source: {toSourceLabel(quote.source)} (cached 60s)
+              </p>
+              <StockForecastCard
+                volumeSurgePct={volumeDeltaPct}
+                cmfSpread={cmfDelta}
+                mfVelocity={cmfMetrics.mfVelocity}
+              />
             </div>
           </>
         ) : (

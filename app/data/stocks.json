@@ -2,18 +2,42 @@
   {
     "symbol": "QUBT",
     "name": "Quantum Computing Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/quantum-computing--big.svg",
     "enabled": true,
     "showChart": true
   },
   {
     "symbol": "RGTI",
     "name": "Rigetti Computing Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/rigetti-computing-redeemable--big.svg",
     "enabled": true,
     "showChart": true
   },
   {
     "symbol": "QBTS",
     "name": "D-Wave Quantum Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/d-wave-quantum--big.svg",
+    "enabled": true,
+    "showChart": true
+  },
+  {
+    "symbol": "XNDU",
+    "name": "Xanadu Quantum Technologies Limited.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/xanadu-quantum-technologies-limited-class-b--big.svg",
+    "enabled": true,
+    "showChart": true
+  },
+  {
+    "symbol": "IONQ",
+    "name": "IonQ Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/ionq--big.svg",
+    "enabled": true,
+    "showChart": true
+  },
+  {
+    "symbol": "INFQ",
+    "name": "Inflection Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/infleqtion--big.svg",
     "enabled": true,
     "showChart": true
   }
