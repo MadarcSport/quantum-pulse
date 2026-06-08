@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { HeroSection } from "./components/hero-section";
+import { MoreStocksButton } from "./components/more-stocks-button";
 import { NewsPreviewSection } from "./components/news-preview-section";
 import { StockSnapshotSection } from "./components/stock-snapshot-section";
 import {
@@ -81,24 +81,7 @@ export default async function Home() {
               justifyContent: "center",
             }}
           >
-            <Link
-              href="/stocks"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "10px 18px",
-                borderRadius: 999,
-                border: "2px solid rgba(14, 165, 233, 0.6)",
-                color: "#e0f2fe",
-                // color: "#e0f2fe",
-                textDecoration: "none",
-                fontWeight: 700,
-                background: "rgba(14, 165, 233, 0.2)",
-              }}
-            >
-              More Stocks
-            </Link>
+            <MoreStocksButton />
           </div>
         ) : null}
 
