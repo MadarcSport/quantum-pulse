@@ -7,6 +7,9 @@ import {
 } from "../lib/stock-quote";
 import { getEnabledStocks } from "../lib/stocks-config";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function StocksPage() {
   const enabledStocks = getEnabledStocks();
   const stocksWithQuotes = await Promise.all(

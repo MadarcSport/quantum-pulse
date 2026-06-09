@@ -58,8 +58,20 @@ type YahooChartResponse = {
   chart?: {
     result?: Array<{
       timestamp?: number[];
+      meta?: {
+        symbol?: string;
+        regularMarketTime?: number;
+        regularMarketPrice?: number;
+        previousClose?: number;
+        chartPreviousClose?: number;
+        regularMarketOpen?: number;
+        regularMarketDayHigh?: number;
+        regularMarketDayLow?: number;
+        regularMarketVolume?: number;
+      };
       indicators?: {
         quote?: Array<{
+          open?: Array<number | null>;
           high?: Array<number | null>;
           low?: Array<number | null>;
           close?: Array<number | null>;
@@ -77,6 +89,8 @@ const YAHOO_HEADERS: HeadersInit = {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
   accept: "application/json, text/plain, */*",
   "accept-language": "en-US,en;q=0.9",
+  referer: "https://finance.yahoo.com/",
+  origin: "https://finance.yahoo.com",
 };
 
 function warnOnce(key: string, message: string): void {
@@ -132,7 +146,7 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
     if (!response.ok) {
       warnOnce(
         `yahoo-quote-${normalizedSymbol}-${response.status}`,
-        `Yahoo quote request failed for ${normalizedSymbol} with status ${response.status}. Falling back to Nasdaq history.`,
+        `Yahoo quote request failed for ${normalizedSymbol} with status ${response.status}. Trying Yahoo chart quote fallback.`,
       );
       return null;
     }
@@ -143,7 +157,7 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
     if (!row) {
       warnOnce(
         `yahoo-quote-empty-${normalizedSymbol}`,
-        `Yahoo quote response was empty for ${normalizedSymbol}. Falling back to Nasdaq history.`,
+        `Yahoo quote response was empty for ${normalizedSymbol}. Trying Yahoo chart quote fallback.`,
       );
       return null;
     }
@@ -167,7 +181,7 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
     ) {
       warnOnce(
         `yahoo-quote-invalid-${normalizedSymbol}`,
-        `Yahoo quote payload had invalid numeric fields for ${normalizedSymbol}. Falling back to Nasdaq history.`,
+        `Yahoo quote payload had invalid numeric fields for ${normalizedSymbol}. Trying Yahoo chart quote fallback.`,
       );
       return null;
     }
@@ -189,7 +203,139 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
   } catch {
     warnOnce(
       `yahoo-quote-exception-${normalizedSymbol}`,
-      `Yahoo quote request threw for ${normalizedSymbol}. Falling back to Nasdaq history.`,
+      `Yahoo quote request threw for ${normalizedSymbol}. Trying Yahoo chart quote fallback.`,
+    );
+    return null;
+  }
+}
+
+function getLastFiniteNumber(values?: Array<number | null>): number | null {
+  if (!values) {
+    return null;
+  }
+
+  for (let i = values.length - 1; i >= 0; i -= 1) {
+    const value = values[i];
+    if (Number.isFinite(value)) {
+      return Number(value);
+    }
+  }
+
+  return null;
+}
+
+function getExtrema(
+  values: Array<number | null> | undefined,
+  mode: "min" | "max",
+): number | null {
+  if (!values) {
+    return null;
+  }
+
+  const finiteValues = values.filter((value): value is number =>
+    Number.isFinite(value),
+  );
+  if (finiteValues.length === 0) {
+    return null;
+  }
+
+  return mode === "max" ? Math.max(...finiteValues) : Math.min(...finiteValues);
+}
+
+async function fetchYahooChartQuote(
+  symbol: string,
+): Promise<StockQuote | null> {
+  const normalizedSymbol = symbol.toUpperCase();
+
+  try {
+    const response = await fetch(
+      `https://query2.finance.yahoo.com/v8/finance/chart/${normalizedSymbol}?range=1d&interval=1m&includePrePost=true&events=div%2Csplits`,
+      {
+        headers: YAHOO_HEADERS,
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      warnOnce(
+        `yahoo-chart-quote-${normalizedSymbol}-${response.status}`,
+        `Yahoo chart quote request failed for ${normalizedSymbol} with status ${response.status}. Falling back to Nasdaq history.`,
+      );
+      return null;
+    }
+
+    const json = (await response.json()) as YahooChartResponse;
+    const result = json.chart?.result?.[0];
+    const meta = result?.meta;
+    const quote = result?.indicators?.quote?.[0];
+    const timestamps = result?.timestamp ?? [];
+    const marketTime =
+      (Number.isFinite(meta?.regularMarketTime)
+        ? Number(meta?.regularMarketTime)
+        : null) ?? getLastFiniteNumber(timestamps as Array<number | null>);
+
+    const close =
+      (Number.isFinite(meta?.regularMarketPrice)
+        ? Number(meta?.regularMarketPrice)
+        : null) ?? getLastFiniteNumber(quote?.close);
+    const previousClose =
+      (Number.isFinite(meta?.previousClose)
+        ? Number(meta?.previousClose)
+        : null) ??
+      (Number.isFinite(meta?.chartPreviousClose)
+        ? Number(meta?.chartPreviousClose)
+        : null);
+    const open =
+      (Number.isFinite(meta?.regularMarketOpen)
+        ? Number(meta?.regularMarketOpen)
+        : null) ?? getLastFiniteNumber(quote?.open);
+    const high =
+      (Number.isFinite(meta?.regularMarketDayHigh)
+        ? Number(meta?.regularMarketDayHigh)
+        : null) ?? getExtrema(quote?.high, "max");
+    const low =
+      (Number.isFinite(meta?.regularMarketDayLow)
+        ? Number(meta?.regularMarketDayLow)
+        : null) ?? getExtrema(quote?.low, "min");
+    const volume =
+      (Number.isFinite(meta?.regularMarketVolume)
+        ? Number(meta?.regularMarketVolume)
+        : null) ?? getLastFiniteNumber(quote?.volume);
+
+    if (
+      close === null ||
+      previousClose === null ||
+      open === null ||
+      high === null ||
+      low === null ||
+      volume === null ||
+      marketTime === null
+    ) {
+      warnOnce(
+        `yahoo-chart-quote-invalid-${normalizedSymbol}`,
+        `Yahoo chart quote payload had invalid numeric fields for ${normalizedSymbol}. Falling back to Nasdaq history.`,
+      );
+      return null;
+    }
+
+    const { date, time } = formatDateTimeFromEpoch(marketTime);
+
+    return {
+      symbol: meta?.symbol ?? normalizedSymbol,
+      date,
+      time,
+      previousClose,
+      open,
+      high,
+      low,
+      close,
+      volume,
+      source: "yahoo",
+    };
+  } catch {
+    warnOnce(
+      `yahoo-chart-quote-exception-${normalizedSymbol}`,
+      `Yahoo chart quote request threw for ${normalizedSymbol}. Falling back to Nasdaq history.`,
     );
     return null;
   }
@@ -239,6 +385,11 @@ export async function fetchStockQuote(
   const yahooQuote = await fetchYahooQuote(symbol);
   if (yahooQuote) {
     return yahooQuote;
+  }
+
+  const yahooChartQuote = await fetchYahooChartQuote(symbol);
+  if (yahooChartQuote) {
+    return yahooChartQuote;
   }
 
   const rows = await fetchNasdaqHistoryRows(symbol);
