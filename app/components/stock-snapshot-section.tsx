@@ -20,6 +20,10 @@ function toSourceLabel(source: StockQuote["source"]) {
   return source === "yahoo" ? "Yahoo Finance" : "Nasdaq";
 }
 
+const SHOW_QUOTE_DEBUG_BADGE =
+  process.env.NODE_ENV !== "production" ||
+  process.env.NEXT_PUBLIC_SHOW_QUOTE_DEBUG === "1";
+
 function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
 }
@@ -271,6 +275,9 @@ export function StockSnapshotSection({
             >
               <p className={styles.sourceMeta}>
                 Source: {toSourceLabel(quote.source)} (cached 60s)
+                {SHOW_QUOTE_DEBUG_BADGE && quote.quotePath ? (
+                  <span className={styles.debugBadge}>{quote.quotePath}</span>
+                ) : null}
               </p>
               <StockForecastCard
                 volumeSurgePct={volumeDeltaPct}

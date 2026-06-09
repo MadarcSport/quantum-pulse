@@ -9,6 +9,7 @@ export type StockQuote = {
   close: number;
   volume: number;
   source: "yahoo" | "nasdaq";
+  quotePath?: "yahoo-v7" | "yahoo-chart" | "nasdaq-history";
 };
 
 export type StockCmfMetrics = {
@@ -83,6 +84,21 @@ type YahooChartResponse = {
 };
 
 const WARNED_KEYS = new Set<string>();
+const nasdaqHistoryRowsCache = new Map<
+  string,
+  Promise<
+    Array<{
+      date?: string;
+      close?: string;
+      open?: string;
+      high?: string;
+      low?: string;
+      volume?: string;
+    }>
+  >
+>();
+const FETCH_TIMEOUT_MS = 7_000;
+const YAHOO_RETRY_COUNT = 1;
 
 const YAHOO_HEADERS: HeadersInit = {
   "user-agent":
@@ -100,6 +116,55 @@ function warnOnce(key: string, message: string): void {
 
   WARNED_KEYS.add(key);
   console.warn(`[stock-quote] ${message}`);
+}
+
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit,
+  timeoutMs = FETCH_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function fetchWithRetry(
+  input: string,
+  init: RequestInit,
+  options: {
+    retries?: number;
+    timeoutMs?: number;
+    label: string;
+  },
+): Promise<Response> {
+  const { retries = 0, timeoutMs = FETCH_TIMEOUT_MS, label } = options;
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fetchWithTimeout(input, init, timeoutMs);
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries) {
+        break;
+      }
+
+      warnOnce(
+        `${label}-retry-${attempt + 1}`,
+        `${label} request failed on attempt ${attempt + 1}. Retrying once.`,
+      );
+    }
+  }
+
+  throw lastError;
 }
 
 function parseNasdaqNumber(value: string): number {
@@ -133,13 +198,18 @@ function formatDateTimeFromEpoch(epochSeconds: number): {
 
 async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
   const normalizedSymbol = symbol.toUpperCase();
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${normalizedSymbol}`;
 
   try {
-    const response = await fetch(
-      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${normalizedSymbol}`,
+    const response = await fetchWithRetry(
+      url,
       {
         headers: YAHOO_HEADERS,
         cache: "no-store",
+      },
+      {
+        retries: YAHOO_RETRY_COUNT,
+        label: `Yahoo quote ${normalizedSymbol}`,
       },
     );
 
@@ -199,11 +269,12 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
       close: Number(close),
       volume: Number(volume),
       source: "yahoo",
+      quotePath: "yahoo-v7",
     };
   } catch {
     warnOnce(
       `yahoo-quote-exception-${normalizedSymbol}`,
-      `Yahoo quote request threw for ${normalizedSymbol}. Trying Yahoo chart quote fallback.`,
+      `Yahoo quote request threw or timed out for ${normalizedSymbol}. Trying Yahoo chart quote fallback.`,
     );
     return null;
   }
@@ -246,13 +317,18 @@ async function fetchYahooChartQuote(
   symbol: string,
 ): Promise<StockQuote | null> {
   const normalizedSymbol = symbol.toUpperCase();
+  const url = `https://query2.finance.yahoo.com/v8/finance/chart/${normalizedSymbol}?range=1d&interval=1m&includePrePost=true&events=div%2Csplits`;
 
   try {
-    const response = await fetch(
-      `https://query2.finance.yahoo.com/v8/finance/chart/${normalizedSymbol}?range=1d&interval=1m&includePrePost=true&events=div%2Csplits`,
+    const response = await fetchWithRetry(
+      url,
       {
         headers: YAHOO_HEADERS,
         cache: "no-store",
+      },
+      {
+        retries: YAHOO_RETRY_COUNT,
+        label: `Yahoo chart quote ${normalizedSymbol}`,
       },
     );
 
@@ -331,11 +407,12 @@ async function fetchYahooChartQuote(
       close,
       volume,
       source: "yahoo",
+      quotePath: "yahoo-chart",
     };
   } catch {
     warnOnce(
       `yahoo-chart-quote-exception-${normalizedSymbol}`,
-      `Yahoo chart quote request threw for ${normalizedSymbol}. Falling back to Nasdaq history.`,
+      `Yahoo chart quote request threw or timed out for ${normalizedSymbol}. Falling back to Nasdaq history.`,
     );
     return null;
   }
@@ -351,37 +428,71 @@ async function fetchNasdaqHistoryRows(symbol: string): Promise<
     volume?: string;
   }>
 > {
-  try {
-    const today = new Date();
-    const oneYearAgo = new Date(today);
-    oneYearAgo.setFullYear(today.getFullYear() - 1);
+  const normalizedSymbol = symbol.toUpperCase();
+  const existingRequest = nasdaqHistoryRowsCache.get(normalizedSymbol);
 
-    const toDate = today.toISOString().slice(0, 10);
-    const fromDate = oneYearAgo.toISOString().slice(0, 10);
-    const url = `https://api.nasdaq.com/api/quote/${symbol.toUpperCase()}/historical?assetclass=stocks&fromdate=${fromDate}&todate=${toDate}&limit=365`;
+  if (existingRequest) {
+    return existingRequest;
+  }
 
-    const response = await fetch(url, {
-      headers: {
-        "user-agent": "Mozilla/5.0",
-        accept: "application/json",
-      },
-      next: { revalidate: 60 },
-    });
+  const request = (async () => {
+    try {
+      const today = new Date();
+      const oneYearAgo = new Date(today);
+      oneYearAgo.setFullYear(today.getFullYear() - 1);
 
-    if (!response.ok) {
+      const toDate = today.toISOString().slice(0, 10);
+      const fromDate = oneYearAgo.toISOString().slice(0, 10);
+      const url = `https://api.nasdaq.com/api/quote/${normalizedSymbol}/historical?assetclass=stocks&fromdate=${fromDate}&todate=${toDate}&limit=365`;
+
+      const response = await fetchWithTimeout(
+        url,
+        {
+          headers: {
+            "user-agent": "Mozilla/5.0",
+            accept: "application/json",
+          },
+          next: { revalidate: 60 },
+        },
+        FETCH_TIMEOUT_MS,
+      );
+
+      if (!response.ok) {
+        warnOnce(
+          `nasdaq-history-${normalizedSymbol}-${response.status}`,
+          `Nasdaq history request failed for ${normalizedSymbol} with status ${response.status}.`,
+        );
+        return [];
+      }
+
+      const json = (await response.json()) as NasdaqHistoricalVolumeResponse;
+      const rows = json.data?.tradesTable?.rows ?? [];
+
+      if (rows.length === 0) {
+        warnOnce(
+          `nasdaq-history-empty-${normalizedSymbol}`,
+          `Nasdaq history returned no rows for ${normalizedSymbol}.`,
+        );
+      }
+
+      return rows;
+    } catch {
+      warnOnce(
+        `nasdaq-history-exception-${normalizedSymbol}`,
+        `Nasdaq history request threw or timed out for ${normalizedSymbol}.`,
+      );
       return [];
     }
+  })();
 
-    const json = (await response.json()) as NasdaqHistoricalVolumeResponse;
-    return json.data?.tradesTable?.rows ?? [];
-  } catch {
-    return [];
-  }
+  nasdaqHistoryRowsCache.set(normalizedSymbol, request);
+  return request;
 }
 
 export async function fetchStockQuote(
   symbol: string,
 ): Promise<StockQuote | null> {
+  const normalizedSymbol = symbol.toUpperCase();
   const yahooQuote = await fetchYahooQuote(symbol);
   if (yahooQuote) {
     return yahooQuote;
@@ -397,6 +508,10 @@ export async function fetchStockQuote(
   const previous = rows[1];
 
   if (!latest || !previous) {
+    warnOnce(
+      `stock-quote-unavailable-${normalizedSymbol}`,
+      `Quote data is unavailable for ${normalizedSymbol} after Yahoo and Nasdaq fallbacks.`,
+    );
     return null;
   }
 
@@ -415,11 +530,15 @@ export async function fetchStockQuote(
     !Number.isFinite(close) ||
     !Number.isFinite(volume)
   ) {
+    warnOnce(
+      `stock-quote-invalid-nasdaq-${normalizedSymbol}`,
+      `Nasdaq fallback quote contained invalid numeric fields for ${normalizedSymbol}.`,
+    );
     return null;
   }
 
   return {
-    symbol: symbol.toUpperCase(),
+    symbol: normalizedSymbol,
     date: latest.date ?? "N/A",
     time: "Market Close",
     previousClose,
@@ -429,22 +548,32 @@ export async function fetchStockQuote(
     close,
     volume,
     source: "nasdaq",
+    quotePath: "nasdaq-history",
   };
 }
 
 async function fetchYahooAverageVolume90d(
   symbol: string,
 ): Promise<number | null> {
+  const normalizedSymbol = symbol.toUpperCase();
   try {
-    const response = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${symbol.toUpperCase()}?range=6mo&interval=1d&includePrePost=false&events=div%2Csplits`,
+    const response = await fetchWithRetry(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${normalizedSymbol}?range=6mo&interval=1d&includePrePost=false&events=div%2Csplits`,
       {
         headers: YAHOO_HEADERS,
         next: { revalidate: 60 },
       },
+      {
+        retries: YAHOO_RETRY_COUNT,
+        label: `Yahoo avg volume ${normalizedSymbol}`,
+      },
     );
 
     if (!response.ok) {
+      warnOnce(
+        `yahoo-avg-volume-${normalizedSymbol}-${response.status}`,
+        `Yahoo average volume request failed for ${normalizedSymbol} with status ${response.status}. Falling back to Nasdaq history.`,
+      );
       return null;
     }
 
@@ -461,21 +590,34 @@ async function fetchYahooAverageVolume90d(
     const total = recent.reduce((sum, value) => sum + value, 0);
     return total / recent.length;
   } catch {
+    warnOnce(
+      `yahoo-avg-volume-exception-${normalizedSymbol}`,
+      `Yahoo average volume request threw or timed out for ${normalizedSymbol}. Falling back to Nasdaq history.`,
+    );
     return null;
   }
 }
 
 async function fetchYahooDailyOhlcv(symbol: string): Promise<OhlcvPoint[]> {
+  const normalizedSymbol = symbol.toUpperCase();
   try {
-    const response = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${symbol.toUpperCase()}?range=1y&interval=1d&includePrePost=false&events=div%2Csplits`,
+    const response = await fetchWithRetry(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${normalizedSymbol}?range=1y&interval=1d&includePrePost=false&events=div%2Csplits`,
       {
         headers: YAHOO_HEADERS,
         next: { revalidate: 60 },
       },
+      {
+        retries: YAHOO_RETRY_COUNT,
+        label: `Yahoo OHLCV ${normalizedSymbol}`,
+      },
     );
 
     if (!response.ok) {
+      warnOnce(
+        `yahoo-ohlcv-${normalizedSymbol}-${response.status}`,
+        `Yahoo OHLCV request failed for ${normalizedSymbol} with status ${response.status}. Falling back to Nasdaq history.`,
+      );
       return [];
     }
 
@@ -519,6 +661,10 @@ async function fetchYahooDailyOhlcv(symbol: string): Promise<OhlcvPoint[]> {
 
     return points;
   } catch {
+    warnOnce(
+      `yahoo-ohlcv-exception-${normalizedSymbol}`,
+      `Yahoo OHLCV request threw or timed out for ${normalizedSymbol}. Falling back to Nasdaq history.`,
+    );
     return [];
   }
 }

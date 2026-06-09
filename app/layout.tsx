@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import Link from "next/link";
 import { BrandLogo } from "./components/brand-logo";
 import { TopNav } from "./components/top-nav";
@@ -14,54 +15,110 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const hasClerkEnv =
+    Boolean(publishableKey) && Boolean(process.env.CLERK_SECRET_KEY);
+
   return (
     <html lang="en">
       <body>
-        <header
-          style={{
-            position: "sticky",
-            top: 10,
-            zIndex: 40,
-            backdropFilter: "blur(18px)",
-            // background: "rgba(2, 6, 23, 0.78)",
-            background: "rgba(2, 6, 23, 0.78)",
-            borderBottom: "1px solid rgba(148, 163, 184, 0.14)",
-          }}
-        >
-          <nav
-            style={{
-              width: "min(1120px, calc(100% - 32px))",
-              margin: "0 auto",
-              minHeight: 68,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-            }}
-            aria-label="Main navigation"
-          >
-            <Link
-              href="/"
+        {hasClerkEnv ? (
+          <ClerkProvider publishableKey={publishableKey}>
+            <header
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 10,
-                color: "#f8fafc",
-                fontSize: 15,
-                fontWeight: 800,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
+                position: "sticky",
+                top: 10,
+                zIndex: 40,
+                backdropFilter: "blur(18px)",
+                // background: "rgba(2, 6, 23, 0.78)",
+                background: "rgba(2, 6, 23, 0.78)",
+                borderBottom: "1px solid rgba(148, 163, 184, 0.14)",
               }}
             >
-              <BrandLogo size={65} />
-              <span>Quantum Pulse</span>
-            </Link>
+              <nav
+                style={{
+                  width: "min(1120px, calc(100% - 32px))",
+                  margin: "0 auto",
+                  minHeight: 68,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                }}
+                aria-label="Main navigation"
+              >
+                <Link
+                  href="/"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 10,
+                    color: "#f8fafc",
+                    fontSize: 15,
+                    fontWeight: 800,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  <BrandLogo size={65} />
+                  <span>Quantum Pulse</span>
+                </Link>
 
-            <TopNav />
-          </nav>
-        </header>
+                <TopNav authEnabled />
+              </nav>
+            </header>
 
-        {children}
+            {children}
+          </ClerkProvider>
+        ) : (
+          <>
+            <header
+              style={{
+                position: "sticky",
+                top: 10,
+                zIndex: 40,
+                backdropFilter: "blur(18px)",
+                // background: "rgba(2, 6, 23, 0.78)",
+                background: "rgba(2, 6, 23, 0.78)",
+                borderBottom: "1px solid rgba(148, 163, 184, 0.14)",
+              }}
+            >
+              <nav
+                style={{
+                  width: "min(1120px, calc(100% - 32px))",
+                  margin: "0 auto",
+                  minHeight: 68,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                }}
+                aria-label="Main navigation"
+              >
+                <Link
+                  href="/"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 10,
+                    color: "#f8fafc",
+                    fontSize: 15,
+                    fontWeight: 800,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  <BrandLogo size={65} />
+                  <span>Quantum Pulse</span>
+                </Link>
+
+                <TopNav authEnabled={false} />
+              </nav>
+            </header>
+
+            {children}
+          </>
+        )}
       </body>
     </html>
   );

@@ -40,5 +40,26 @@
     "logoUrl": "https://s3-symbol-logo.tradingview.com/infleqtion--big.svg",
     "enabled": true,
     "showChart": true
+  },
+  {
+    "symbol": "ARQQ",
+    "name": "Arqit Quantum Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/arqit-quantum--big.svg",
+    "enabled": true,
+    "showChart": true
+  },
+  {
+    "symbol": "LAES",
+    "name": "SEALSQ Corporation",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/sealsq--big.svg",
+    "enabled": true,
+    "showChart": true
+  },
+  {
+    "symbol": "PLAB",
+    "name": "Photronics Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/photronics--big.svg",
+    "enabled": true,
+    "showChart": true
   }
 ]

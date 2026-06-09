@@ -74,6 +74,21 @@
   font-size: 13px;
 }
 
+.debugBadge {
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  background: rgba(14, 165, 233, 0.16);
+  color: #bae6fd;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 2px 8px;
+  vertical-align: middle;
+}
+
 .chartButton {
   border: 1px solid rgba(56, 189, 248, 0.55);
   background: rgba(14, 165, 233, 0.16);
