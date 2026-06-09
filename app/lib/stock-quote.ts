@@ -70,6 +70,24 @@ type YahooChartResponse = {
   };
 };
 
+const WARNED_KEYS = new Set<string>();
+
+const YAHOO_HEADERS: HeadersInit = {
+  "user-agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+  accept: "application/json, text/plain, */*",
+  "accept-language": "en-US,en;q=0.9",
+};
+
+function warnOnce(key: string, message: string): void {
+  if (WARNED_KEYS.has(key)) {
+    return;
+  }
+
+  WARNED_KEYS.add(key);
+  console.warn(`[stock-quote] ${message}`);
+}
+
 function parseNasdaqNumber(value: string): number {
   return Number(value.replace(/[$,\s]/g, ""));
 }
@@ -100,15 +118,22 @@ function formatDateTimeFromEpoch(epochSeconds: number): {
 }
 
 async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
+  const normalizedSymbol = symbol.toUpperCase();
+
   try {
     const response = await fetch(
-      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol.toUpperCase()}`,
+      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${normalizedSymbol}`,
       {
-        next: { revalidate: 60 },
+        headers: YAHOO_HEADERS,
+        cache: "no-store",
       },
     );
 
     if (!response.ok) {
+      warnOnce(
+        `yahoo-quote-${normalizedSymbol}-${response.status}`,
+        `Yahoo quote request failed for ${normalizedSymbol} with status ${response.status}. Falling back to Nasdaq history.`,
+      );
       return null;
     }
 
@@ -116,6 +141,10 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
     const row = json.quoteResponse?.result?.[0];
 
     if (!row) {
+      warnOnce(
+        `yahoo-quote-empty-${normalizedSymbol}`,
+        `Yahoo quote response was empty for ${normalizedSymbol}. Falling back to Nasdaq history.`,
+      );
       return null;
     }
 
@@ -136,13 +165,17 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
       !Number.isFinite(volume) ||
       !Number.isFinite(marketTime)
     ) {
+      warnOnce(
+        `yahoo-quote-invalid-${normalizedSymbol}`,
+        `Yahoo quote payload had invalid numeric fields for ${normalizedSymbol}. Falling back to Nasdaq history.`,
+      );
       return null;
     }
 
     const { date, time } = formatDateTimeFromEpoch(Number(marketTime));
 
     return {
-      symbol: row.symbol ?? symbol.toUpperCase(),
+      symbol: row.symbol ?? normalizedSymbol,
       date,
       time,
       previousClose: Number(previousClose),
@@ -154,6 +187,10 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
       source: "yahoo",
     };
   } catch {
+    warnOnce(
+      `yahoo-quote-exception-${normalizedSymbol}`,
+      `Yahoo quote request threw for ${normalizedSymbol}. Falling back to Nasdaq history.`,
+    );
     return null;
   }
 }
@@ -251,6 +288,7 @@ async function fetchYahooAverageVolume90d(
     const response = await fetch(
       `https://query1.finance.yahoo.com/v8/finance/chart/${symbol.toUpperCase()}?range=6mo&interval=1d&includePrePost=false&events=div%2Csplits`,
       {
+        headers: YAHOO_HEADERS,
         next: { revalidate: 60 },
       },
     );
@@ -281,6 +319,7 @@ async function fetchYahooDailyOhlcv(symbol: string): Promise<OhlcvPoint[]> {
     const response = await fetch(
       `https://query1.finance.yahoo.com/v8/finance/chart/${symbol.toUpperCase()}?range=1y&interval=1d&includePrePost=false&events=div%2Csplits`,
       {
+        headers: YAHOO_HEADERS,
         next: { revalidate: 60 },
       },
     );
