@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import Link from "next/link";
 import { BrandLogo } from "./components/brand-logo";
+import { SiteFooter } from "./components/site-footer";
 import { TopNav } from "./components/top-nav";
 import "./globals.css";
 
@@ -61,7 +62,7 @@ export default function RootLayout({
                   }}
                 >
                   <BrandLogo size={65} />
-                  <span>Quantum Pulse</span>
+                  <span>Pulse</span>
                 </Link>
 
                 <TopNav authEnabled />
@@ -69,6 +70,7 @@ export default function RootLayout({
             </header>
 
             {children}
+            <SiteFooter />
           </ClerkProvider>
         ) : (
           <>
@@ -117,6 +119,7 @@ export default function RootLayout({
             </header>
 
             {children}
+            <SiteFooter />
           </>
         )}
       </body>

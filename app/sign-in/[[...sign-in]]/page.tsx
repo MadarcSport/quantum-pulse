@@ -1,4 +1,5 @@
 import { SignIn } from "@clerk/nextjs";
+import Link from "next/link";
 
 export default function SignInPage() {
   const hasClerkEnv =
@@ -29,6 +30,17 @@ export default function SignInPage() {
           </code>
           to <code>.env.local</code> and restart the dev server.
         </p>
+        <p
+          style={{
+            margin: "12px 0 0",
+            color: "#94a3b8",
+            fontSize: 13,
+            textAlign: "center",
+          }}
+        >
+          By continuing, you agree to our <Link href="/terms">Terms</Link> and
+          acknowledge our <Link href="/privacy">Privacy Policy</Link>.
+        </p>
       </main>
     );
   }
@@ -44,7 +56,26 @@ export default function SignInPage() {
           "linear-gradient(180deg, #020617 0%, #0f172a 50%, #020617 100%)",
       }}
     >
-      <SignIn path="/sign-in" signUpUrl="/sign-up" />
+      <div
+        style={{
+          display: "grid",
+          gap: 12,
+          justifyItems: "center",
+        }}
+      >
+        <SignIn path="/sign-in" signUpUrl="/sign-up" />
+        <p
+          style={{
+            margin: 0,
+            color: "#94a3b8",
+            fontSize: 13,
+            textAlign: "center",
+          }}
+        >
+          By continuing, you agree to our <Link href="/terms">Terms</Link> and
+          acknowledge our <Link href="/privacy">Privacy Policy</Link>.
+        </p>
+      </div>
     </main>
   );
 }

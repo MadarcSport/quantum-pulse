@@ -20,3 +20,44 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+.top-nav-desktop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.top-nav-mobile {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .top-nav-desktop {
+    display: none;
+  }
+
+  .top-nav-mobile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .top-nav-mobile-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 190px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(2, 6, 23, 0.96);
+    backdrop-filter: blur(14px);
+    z-index: 50;
+    box-shadow: 0 16px 38px rgba(2, 6, 23, 0.52);
+  }
+}
