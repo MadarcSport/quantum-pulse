@@ -39,6 +39,7 @@ export function TopNav({ authEnabled = true }: TopNavProps) {
   const isStocksActive =
     pathname === "/stocks" || pathname.startsWith("/stocks/");
   const isNewsActive = pathname === "/news" || pathname.startsWith("/news/");
+  const isEbookActive = pathname === "/ebook" || pathname.startsWith("/ebook/");
   const authPillStyle = {
     padding: "8px 14px",
     borderRadius: 999,
@@ -83,6 +84,13 @@ export function TopNav({ authEnabled = true }: TopNavProps) {
           onClick={onNavigate}
         >
           News
+        </Link>
+        <Link
+          href="/ebook"
+          style={getLinkStyle(isEbookActive)}
+          onClick={onNavigate}
+        >
+          Ebook
         </Link>
       </>
     );
