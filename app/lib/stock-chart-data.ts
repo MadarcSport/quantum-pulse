@@ -47,12 +47,11 @@ type NasdaqHistoricalResponse = {
 
 async function fetchYahooHistory(
   symbol: string,
-  interval: "5m" | "1d",
-  range: "5d" | "1y",
+  range: "1y",
 ): Promise<ChartPoint[]> {
   try {
     const response = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${symbol.toUpperCase()}?range=${range}&interval=${interval}&includePrePost=false&events=div%2Csplits`,
+      `https://query1.finance.yahoo.com/v8/finance/chart/${symbol.toUpperCase()}?range=${range}&interval=1d&includePrePost=false&events=div%2Csplits`,
       {
         next: { revalidate: 60 },
       },
@@ -72,22 +71,12 @@ async function fetchYahooHistory(
     }
 
     const points: ChartPoint[] = [];
-    const formatter =
-      interval === "1d"
-        ? new Intl.DateTimeFormat("en-CA", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            timeZone: "America/New_York",
-          })
-        : new Intl.DateTimeFormat("en-US", {
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-            timeZone: "America/New_York",
-          });
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: "America/New_York",
+    });
 
     for (let i = 0; i < timestamps.length; i += 1) {
       const timestamp = timestamps[i];
@@ -98,6 +87,7 @@ async function fetchYahooHistory(
       }
 
       const date = new Date(timestamp * 1000);
+
       points.push({
         label: formatter.format(date),
         close: Number(closeValue),
@@ -172,10 +162,16 @@ async function fetchNasdaqHistory(symbol: string): Promise<ChartPoint[]> {
 }
 
 function getChartData(
-  intradayLike: ChartPoint[],
   daily: ChartPoint[],
   source: "yahoo" | "nasdaq",
 ): ChartData {
+  const fiveDays = daily.slice(-5);
+  const fiveDaysStartIndex = Math.max(daily.length - fiveDays.length, 0);
+  const fiveDaysReference =
+    fiveDaysStartIndex > 0
+      ? (daily[fiveDaysStartIndex - 1]?.close ?? null)
+      : (fiveDays[0]?.close ?? null);
+
   const month = daily.slice(-22);
   const monthStartIndex = Math.max(daily.length - month.length, 0);
   const monthReference =
@@ -194,16 +190,14 @@ function getChartData(
       ? (daily[ytdStartIndex - 1]?.close ?? null)
       : (ytdPoints[0]?.close ?? null);
 
-  const dayReference = daily.length > 1 ? daily[daily.length - 2]?.close : null;
-
   return {
     ranges: {
-      day: intradayLike.slice(-80),
+      day: fiveDays,
       month,
       ytd: ytdPoints,
     },
     changeReference: {
-      day: dayReference,
+      day: fiveDaysReference,
       month: monthReference,
       ytd: ytdReference,
     },
@@ -212,16 +206,13 @@ function getChartData(
 }
 
 export async function fetchStockChartData(symbol: string): Promise<ChartData> {
-  const [yahooIntraday, yahooDaily, nasdaq] = await Promise.all([
-    fetchYahooHistory(symbol, "5m", "5d"),
-    fetchYahooHistory(symbol, "1d", "1y"),
+  const [yahooDaily, nasdaq] = await Promise.all([
+    fetchYahooHistory(symbol, "1y"),
     fetchNasdaqHistory(symbol),
   ]);
 
   const historyForChart = yahooDaily.length > 1 ? yahooDaily : nasdaq;
-  const dayForChart =
-    yahooIntraday.length > 1 ? yahooIntraday : historyForChart;
   const source: "yahoo" | "nasdaq" = yahooDaily.length > 1 ? "yahoo" : "nasdaq";
 
-  return getChartData(dayForChart, historyForChart, source);
+  return getChartData(historyForChart, source);
 }

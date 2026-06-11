@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import type {
   ChartChangeReference,
   ChartPoint,
@@ -17,11 +18,53 @@ type StockChartProps = {
 
 type RangeKey = keyof ChartRanges;
 
+type ChartCoordinate = ChartPoint & {
+  index: number;
+  x: number;
+  y: number;
+};
+
+type ChartGeometry = {
+  areaPath: string;
+  chartHeight: number;
+  chartWidth: number;
+  coordinates: ChartCoordinate[];
+  path: string;
+};
+
 const RANGE_OPTIONS: { key: RangeKey; label: string }[] = [
-  { key: "day", label: "Day" },
+  { key: "day", label: "5D" },
   { key: "month", label: "Month" },
   { key: "ytd", label: "YTD" },
 ];
+
+const MONTH_AXIS_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+});
+
+const YTD_AXIS_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+});
+
+const DAY_TOOLTIP_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+const INTRADAY_TOOLTIP_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+const DATE_TOOLTIP_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
 
 function getTickIndices(length: number, maxTicks = 5) {
   if (length <= 0) {
@@ -76,28 +119,53 @@ function parseLabelDate(label: string) {
 }
 
 function formatAxisLabel(label: string, range: RangeKey) {
-  if (range === "day") {
-    const timeMatch = label.trim().match(/(\d{1,2}:\d{2})$/);
-    return timeMatch ? timeMatch[1] : label;
-  }
-
   const parsed = parseLabelDate(label);
   if (!parsed) {
-    const monthMatch = label.trim().match(/^(\d{1,2})\//);
-    return monthMatch ? monthMatch[1] : label;
+    return label;
   }
 
-  return String(parsed.getMonth() + 1);
+  if (range === "day") {
+    return MONTH_AXIS_FORMATTER.format(parsed);
+  }
+
+  if (range === "month") {
+    return MONTH_AXIS_FORMATTER.format(parsed);
+  }
+
+  return YTD_AXIS_FORMATTER.format(parsed);
 }
 
-function toPath(
+function formatTooltipLabel(label: string, range: RangeKey) {
+  const parsed = parseLabelDate(label);
+
+  if (!parsed) {
+    return label;
+  }
+
+  if (range === "day") {
+    return DAY_TOOLTIP_FORMATTER.format(parsed);
+  }
+
+  const hasTime = /(\d{1,2}:\d{2})$/.test(label.trim());
+  return hasTime
+    ? INTRADAY_TOOLTIP_FORMATTER.format(parsed)
+    : DATE_TOOLTIP_FORMATTER.format(parsed);
+}
+
+function getChartGeometry(
   points: ChartPoint[],
   width: number,
   height: number,
   padding: number,
-) {
+): ChartGeometry {
   if (points.length === 0) {
-    return "";
+    return {
+      areaPath: "",
+      chartHeight: height - padding * 2,
+      chartWidth: width - padding * 2,
+      coordinates: [],
+      path: "",
+    };
   }
 
   const closes = points.map((point) => point.close);
@@ -107,14 +175,39 @@ function toPath(
   const chartWidth = width - padding * 2;
   const chartHeight = height - padding * 2;
 
-  return points
+  const coordinates = points.map((point, index) => {
+    const x = padding + (index / Math.max(points.length - 1, 1)) * chartWidth;
+    const normalized = (point.close - min) / valueRange;
+    const y = padding + chartHeight - normalized * chartHeight;
+    return {
+      ...point,
+      index,
+      x,
+      y,
+    };
+  });
+
+  const path = coordinates
     .map((point, index) => {
-      const x = padding + (index / Math.max(points.length - 1, 1)) * chartWidth;
-      const normalized = (point.close - min) / valueRange;
-      const y = padding + chartHeight - normalized * chartHeight;
-      return `${index === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
+      return `${index === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
     })
     .join(" ");
+
+  const firstPoint = coordinates[0];
+  const lastPoint = coordinates[coordinates.length - 1];
+  const baselineY = height - padding;
+  const areaPath =
+    coordinates.length > 1
+      ? `${path} L${lastPoint.x.toFixed(2)} ${baselineY.toFixed(2)} L${firstPoint.x.toFixed(2)} ${baselineY.toFixed(2)} Z`
+      : "";
+
+  return {
+    areaPath,
+    chartHeight,
+    chartWidth,
+    coordinates,
+    path,
+  };
 }
 
 export function StockChart({
@@ -125,15 +218,34 @@ export function StockChart({
   showHeading = true,
 }: StockChartProps) {
   const [range, setRange] = useState<RangeKey>("month");
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const points = data[range];
   const width = 860;
   const height = 280;
   const padding = 24;
+  const gradientId = useId().replace(/:/g, "");
 
-  const path = useMemo(() => toPath(points, width, height, padding), [points]);
+  const chartGeometry = useMemo(
+    () => getChartGeometry(points, width, height, padding),
+    [points],
+  );
   const axisTickIndices = useMemo(
     () => getTickIndices(points.length),
     [points],
+  );
+  const hoveredPoint =
+    hoveredIndex === null
+      ? null
+      : (chartGeometry.coordinates[hoveredIndex] ?? null);
+  const tooltipX = hoveredPoint
+    ? Math.min(Math.max(hoveredPoint.x, 88), width - 88)
+    : 0;
+  const gridLines = useMemo(
+    () =>
+      Array.from({ length: 4 }, (_, index) => {
+        return padding + (chartGeometry.chartHeight * index) / 3;
+      }),
+    [chartGeometry.chartHeight],
   );
 
   const latest = points[points.length - 1]?.close;
@@ -151,6 +263,34 @@ export function StockChart({
       ? (delta / baseline) * 100
       : 0;
   const deltaColor = delta >= 0 ? "#22c55e" : "#f87171";
+
+  function handlePointerMove(event: ReactPointerEvent<SVGSVGElement>) {
+    if (chartGeometry.coordinates.length === 0) {
+      return;
+    }
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (bounds.width === 0) {
+      return;
+    }
+
+    const x = ((event.clientX - bounds.left) / bounds.width) * width;
+    const relativeIndex = Math.round(
+      ((x - padding) / chartGeometry.chartWidth) *
+        Math.max(chartGeometry.coordinates.length - 1, 1),
+    );
+    const nextIndex = Math.min(
+      Math.max(relativeIndex, 0),
+      chartGeometry.coordinates.length - 1,
+    );
+
+    setHoveredIndex(nextIndex);
+  }
+
+  function handleRangeChange(nextRange: RangeKey) {
+    setRange(nextRange);
+    setHoveredIndex(null);
+  }
 
   return (
     <section
@@ -183,7 +323,7 @@ export function StockChart({
                 <button
                   key={option.key}
                   type="button"
-                  onClick={() => setRange(option.key)}
+                  onClick={() => handleRangeChange(option.key)}
                   style={{
                     border: isActive
                       ? "1px solid rgba(56, 189, 248, 0.9)"
@@ -221,7 +361,7 @@ export function StockChart({
               <button
                 key={option.key}
                 type="button"
-                onClick={() => setRange(option.key)}
+                onClick={() => handleRangeChange(option.key)}
                 style={{
                   border: isActive
                     ? "1px solid rgba(56, 189, 248, 0.9)"
@@ -264,15 +404,66 @@ export function StockChart({
             </p>
           </div>
           <div style={{ width: "100%", overflowX: "auto" }}>
-            <div style={{ minWidth: 500 }}>
+            <div style={{ minWidth: 500, position: "relative" }}>
+              {hoveredPoint ? (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: `${(tooltipX / width) * 100}%`,
+                    top: `${(hoveredPoint.y / height) * 100}%`,
+                    transform: "translate(-50%, calc(-100% - 12px))",
+                    pointerEvents: "none",
+                    zIndex: 1,
+                    minWidth: 132,
+                    border: "1px solid rgba(148, 163, 184, 0.25)",
+                    borderRadius: 12,
+                    background: "rgba(15, 23, 42, 0.94)",
+                    padding: "10px 12px",
+                    boxShadow: "0 16px 36px rgba(2, 6, 23, 0.42)",
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: 0,
+                      color: "#94a3b8",
+                      fontSize: 11,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {formatTooltipLabel(hoveredPoint.label, range)}
+                  </p>
+                  <p
+                    style={{
+                      margin: "4px 0 0",
+                      color: "#f8fafc",
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  >
+                    ${hoveredPoint.close.toFixed(2)}
+                  </p>
+                </div>
+              ) : null}
               <svg
                 viewBox={`0 0 ${width} ${height}`}
                 width="100%"
                 height={height}
                 role="img"
                 aria-label={`${symbol.toUpperCase()} ${range} price chart`}
-                style={{ display: "block" }}
+                onPointerMove={handlePointerMove}
+                onPointerLeave={() => setHoveredIndex(null)}
+                style={{
+                  display: "block",
+                  cursor: "crosshair",
+                  touchAction: "none",
+                }}
               >
+                <defs>
+                  <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="rgba(56, 189, 248, 0.24)" />
+                    <stop offset="100%" stopColor="rgba(56, 189, 248, 0)" />
+                  </linearGradient>
+                </defs>
                 <rect
                   x="0"
                   y="0"
@@ -280,13 +471,48 @@ export function StockChart({
                   height={height}
                   fill="rgba(15, 23, 42, 0.6)"
                 />
+                {gridLines.map((lineY) => (
+                  <line
+                    key={lineY}
+                    x1={padding}
+                    x2={width - padding}
+                    y1={lineY}
+                    y2={lineY}
+                    stroke="rgba(148, 163, 184, 0.22)"
+                    strokeDasharray="4 6"
+                    strokeWidth="1"
+                  />
+                ))}
+                <path d={chartGeometry.areaPath} fill={`url(#${gradientId})`} />
                 <path
-                  d={path}
+                  d={chartGeometry.path}
                   fill="none"
                   stroke="#38bdf8"
                   strokeWidth="3"
                   strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
+                {hoveredPoint ? (
+                  <>
+                    <line
+                      x1={hoveredPoint.x}
+                      x2={hoveredPoint.x}
+                      y1={padding}
+                      y2={height - padding}
+                      stroke="rgba(125, 211, 252, 0.7)"
+                      strokeDasharray="4 6"
+                      strokeWidth="1"
+                    />
+                    <circle
+                      cx={hoveredPoint.x}
+                      cy={hoveredPoint.y}
+                      r="5.5"
+                      fill="#38bdf8"
+                      stroke="rgba(15, 23, 42, 0.95)"
+                      strokeWidth="3"
+                    />
+                  </>
+                ) : null}
               </svg>
               <div
                 aria-hidden="true"

@@ -9,7 +9,7 @@ export type StockQuote = {
   close: number;
   volume: number;
   source: "yahoo" | "nasdaq";
-  quotePath?: "yahoo-v7" | "yahoo-chart" | "nasdaq-history";
+  quotePath?: "yahoo-daily" | "yahoo-v7" | "yahoo-chart" | "nasdaq-history";
 };
 
 export type StockCmfMetrics = {
@@ -81,6 +81,15 @@ type YahooChartResponse = {
       };
     }>;
   };
+};
+
+type DailyQuotePoint = {
+  close: number;
+  high: number;
+  low: number;
+  open: number;
+  timestamp: number;
+  volume: number;
 };
 
 const WARNED_KEYS = new Set<string>();
@@ -194,6 +203,180 @@ function formatDateTimeFromEpoch(epochSeconds: number): {
     date: dateFormatter.format(date),
     time: timeFormatter.format(date),
   };
+}
+
+function getNyDateKeyFromEpoch(epochSeconds: number): string {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "America/New_York",
+  });
+
+  return formatter.format(new Date(epochSeconds * 1000));
+}
+
+function getNyClock(): { day: number; hour: number; minute: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/New_York",
+  }).formatToParts(new Date());
+
+  const weekday = parts.find((part) => part.type === "weekday")?.value ?? "";
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value);
+
+  const dayMap: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+
+  return {
+    day: dayMap[weekday] ?? -1,
+    hour,
+    minute,
+  };
+}
+
+function isBeforeNyCloseOnWeekday(): boolean {
+  const { day, hour, minute } = getNyClock();
+  const isWeekday = day >= 1 && day <= 5;
+
+  if (!isWeekday) {
+    return false;
+  }
+
+  if (hour < 16) {
+    return true;
+  }
+
+  return hour === 16 && minute === 0;
+}
+
+async function fetchYahooDailyQuote(
+  symbol: string,
+): Promise<StockQuote | null> {
+  const normalizedSymbol = symbol.toUpperCase();
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${normalizedSymbol}?range=1y&interval=1d&includePrePost=false&events=div%2Csplits`;
+
+  try {
+    const response = await fetchWithRetry(
+      url,
+      {
+        headers: YAHOO_HEADERS,
+        cache: "no-store",
+      },
+      {
+        retries: YAHOO_RETRY_COUNT,
+        label: `Yahoo daily quote ${normalizedSymbol}`,
+      },
+    );
+
+    if (!response.ok) {
+      warnOnce(
+        `yahoo-daily-quote-${normalizedSymbol}-${response.status}`,
+        `Yahoo daily quote request failed for ${normalizedSymbol} with status ${response.status}. Trying Yahoo live quote fallback.`,
+      );
+      return null;
+    }
+
+    const json = (await response.json()) as YahooChartResponse;
+    const result = json.chart?.result?.[0];
+    const timestamps = result?.timestamp ?? [];
+    const quote = result?.indicators?.quote?.[0];
+    const opens = quote?.open ?? [];
+    const highs = quote?.high ?? [];
+    const lows = quote?.low ?? [];
+    const closes = quote?.close ?? [];
+    const volumes = quote?.volume ?? [];
+
+    const points: DailyQuotePoint[] = [];
+
+    for (let i = 0; i < timestamps.length; i += 1) {
+      const timestamp = timestamps[i];
+      const open = opens[i];
+      const high = highs[i];
+      const low = lows[i];
+      const close = closes[i];
+      const volume = volumes[i];
+
+      if (
+        !Number.isFinite(timestamp) ||
+        !Number.isFinite(open) ||
+        !Number.isFinite(high) ||
+        !Number.isFinite(low) ||
+        !Number.isFinite(close) ||
+        !Number.isFinite(volume)
+      ) {
+        continue;
+      }
+
+      points.push({
+        timestamp: Number(timestamp),
+        open: Number(open),
+        high: Number(high),
+        low: Number(low),
+        close: Number(close),
+        volume: Number(volume),
+      });
+    }
+
+    if (points.length < 2) {
+      warnOnce(
+        `yahoo-daily-quote-insufficient-${normalizedSymbol}`,
+        `Yahoo daily quote response had insufficient rows for ${normalizedSymbol}. Trying Yahoo live quote fallback.`,
+      );
+      return null;
+    }
+
+    const latestIndex = points.length - 1;
+    const todayNyKey = getNyDateKeyFromEpoch(Math.floor(Date.now() / 1000));
+    const latestNyKey = getNyDateKeyFromEpoch(points[latestIndex].timestamp);
+    const usePreviousSession =
+      latestNyKey === todayNyKey && isBeforeNyCloseOnWeekday();
+    const selectedIndex = usePreviousSession ? latestIndex - 1 : latestIndex;
+
+    if (selectedIndex <= 0) {
+      return null;
+    }
+
+    const selected = points[selectedIndex];
+    const previous = points[selectedIndex - 1];
+
+    if (!selected || !previous) {
+      return null;
+    }
+
+    const { date } = formatDateTimeFromEpoch(selected.timestamp);
+
+    return {
+      symbol: normalizedSymbol,
+      date,
+      time: "Market Close",
+      previousClose: previous.close,
+      open: selected.open,
+      high: selected.high,
+      low: selected.low,
+      close: selected.close,
+      volume: selected.volume,
+      source: "yahoo",
+      quotePath: "yahoo-daily",
+    };
+  } catch {
+    warnOnce(
+      `yahoo-daily-quote-exception-${normalizedSymbol}`,
+      `Yahoo daily quote request threw or timed out for ${normalizedSymbol}. Trying Yahoo live quote fallback.`,
+    );
+    return null;
+  }
 }
 
 async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
@@ -493,6 +676,11 @@ export async function fetchStockQuote(
   symbol: string,
 ): Promise<StockQuote | null> {
   const normalizedSymbol = symbol.toUpperCase();
+  const yahooDailyQuote = await fetchYahooDailyQuote(symbol);
+  if (yahooDailyQuote) {
+    return yahooDailyQuote;
+  }
+
   const yahooQuote = await fetchYahooQuote(symbol);
   if (yahooQuote) {
     return yahooQuote;
@@ -803,6 +991,58 @@ export async function fetchAverageVolume90d(
     .filter((volume) => Number.isFinite(volume));
 
   const recent = volumes.slice(0, 90);
+
+  if (recent.length === 0) {
+    return null;
+  }
+
+  const total = recent.reduce((sum, value) => sum + value, 0);
+  return total / recent.length;
+}
+
+export async function fetchAverageVolume7d(
+  symbol: string,
+): Promise<number | null> {
+  const yahooAvg90d = await fetchYahooAverageVolume90d(symbol);
+
+  if (yahooAvg90d !== null) {
+    const normalizedSymbol = symbol.toUpperCase();
+    try {
+      const response = await fetchWithRetry(
+        `https://query1.finance.yahoo.com/v8/finance/chart/${normalizedSymbol}?range=1mo&interval=1d&includePrePost=false&events=div%2Csplits`,
+        {
+          headers: YAHOO_HEADERS,
+          next: { revalidate: 60 },
+        },
+        {
+          retries: YAHOO_RETRY_COUNT,
+          label: `Yahoo avg volume 7d ${normalizedSymbol}`,
+        },
+      );
+
+      if (response.ok) {
+        const json = (await response.json()) as YahooChartResponse;
+        const volumes = (
+          json.chart?.result?.[0]?.indicators?.quote?.[0]?.volume ?? []
+        ).filter((value): value is number => Number.isFinite(value));
+        const recent = volumes.slice(-7);
+
+        if (recent.length > 0) {
+          const total = recent.reduce((sum, value) => sum + value, 0);
+          return total / recent.length;
+        }
+      }
+    } catch {
+      // fall through to Nasdaq fallback
+    }
+  }
+
+  const rows = await fetchNasdaqHistoryRows(symbol);
+  const volumes = rows
+    .map((row) => parseNasdaqNumber(row.volume ?? ""))
+    .filter((volume) => Number.isFinite(volume));
+
+  const recent = volumes.slice(0, 7);
 
   if (recent.length === 0) {
     return null;

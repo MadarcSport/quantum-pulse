@@ -3,6 +3,7 @@ import { MoreStocksButton } from "./components/more-stocks-button";
 import { NewsPreviewSection } from "./components/news-preview-section";
 import { StockSnapshotSection } from "./components/stock-snapshot-section";
 import {
+  fetchAverageVolume7d,
   fetchAverageVolume90d,
   fetchCmfMetrics,
   fetchStockQuote,
@@ -18,6 +19,7 @@ export default async function Home() {
     enabledStocks.map(async (stock) => ({
       ...stock,
       quote: await fetchStockQuote(stock.symbol),
+      avgVolume7d: await fetchAverageVolume7d(stock.symbol),
       avgVolume90d: await fetchAverageVolume90d(stock.symbol),
       cmfMetrics: await fetchCmfMetrics(stock.symbol),
     })),
@@ -52,6 +54,7 @@ export default async function Home() {
               stockName={stock.name}
               logoUrl={stock.logoUrl}
               quote={stock.quote}
+              avgVolume7d={stock.avgVolume7d}
               avgVolume90d={stock.avgVolume90d}
               cmfMetrics={stock.cmfMetrics}
               showChart={stock.showChart}

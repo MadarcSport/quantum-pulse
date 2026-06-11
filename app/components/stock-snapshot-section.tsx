@@ -11,6 +11,7 @@ type StockSnapshotSectionProps = {
   stockName: string;
   logoUrl?: string;
   quote: StockQuote | null;
+  avgVolume7d: number | null;
   avgVolume90d: number | null;
   cmfMetrics: StockCmfMetrics;
   showChart?: boolean;
@@ -79,6 +80,7 @@ export function StockSnapshotSection({
   stockName,
   logoUrl,
   quote,
+  avgVolume7d,
   avgVolume90d,
   cmfMetrics,
   showChart = true,
@@ -90,8 +92,8 @@ export function StockSnapshotSection({
   const showLogoFallback = !logoUrl || hasLogoError;
 
   const volumeDeltaPct =
-    quote && avgVolume90d && avgVolume90d > 0
-      ? ((quote.volume - avgVolume90d) / avgVolume90d) * 100
+    avgVolume7d !== null && avgVolume90d !== null && avgVolume90d > 0
+      ? ((avgVolume7d - avgVolume90d) / avgVolume90d) * 100
       : null;
   const volumeDeltaColor =
     volumeDeltaPct === null
@@ -130,7 +132,13 @@ export function StockSnapshotSection({
         },
         { label: "Last", value: formatPrice(quote.close), emphasize: true },
         { label: "Open", value: formatPrice(quote.open) },
-        { label: "Volume", value: formatNumber(quote.volume) },
+        {
+          label: "Volume (7d)",
+          value:
+            avgVolume7d !== null
+              ? formatNumber(Math.round(avgVolume7d))
+              : "N/A",
+        },
         {
           label: "Avg Volume (90d)",
           value:
@@ -139,7 +147,7 @@ export function StockSnapshotSection({
               : "N/A",
         },
         {
-          label: "Volume vs 90d Avg",
+          label: "Volume 7d vs 90d Avg",
           value:
             volumeDeltaPct !== null
               ? `${volumeDeltaPct >= 0 ? "+" : ""}${volumeDeltaPct.toFixed(1)}%`
