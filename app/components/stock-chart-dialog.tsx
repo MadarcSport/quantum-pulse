@@ -133,15 +133,7 @@ export function StockChartDialog({ symbol, name }: StockChartDialogProps) {
 
   return (
     <div style={{ display: "grid", gap: 10 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
-          flexWrap: "wrap",
-        }}
-      >
+      <div style={{ display: "flex", flexDirection: "column", gap: 30 }}>
         <p
           style={{
             margin: 0,

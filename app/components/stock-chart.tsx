@@ -155,6 +155,20 @@ function formatTooltipLabel(label: string, range: RangeKey) {
     : DATE_TOOLTIP_FORMATTER.format(parsed);
 }
 
+function calculateMovingAverage(
+  points: ChartPoint[],
+  period: number = 20,
+): number[] {
+  const ma: number[] = [];
+  for (let i = 0; i < points.length; i++) {
+    const start = Math.max(0, i - period + 1);
+    const subset = points.slice(start, i + 1);
+    const sum = subset.reduce((acc, p) => acc + p.close, 0);
+    ma.push(sum / subset.length);
+  }
+  return ma;
+}
+
 function getChartGeometry(
   points: ChartPoint[],
   width: number,
@@ -226,7 +240,7 @@ export function StockChart({
   const points = data[range];
   const width = 860;
   const height = 280;
-  const padding = 24;
+  const padding = 55;
   const gradientId = useId().replace(/:/g, "");
 
   const chartGeometry = useMemo(
@@ -251,6 +265,75 @@ export function StockChart({
       }),
     [chartGeometry.chartHeight],
   );
+
+  const yAxisPrices = useMemo(() => {
+    if (points.length === 0) return [];
+    const closes = points.map((p) => p.close);
+    const minPrice = Math.min(...closes);
+    const maxPrice = Math.max(...closes);
+    const priceRange = maxPrice - minPrice || 1;
+
+    return Array.from({ length: 4 }, (_, index) => {
+      const ratio = index / 3;
+      const price = maxPrice - ratio * priceRange;
+      const y = padding + (chartGeometry.chartHeight * index) / 3;
+      return { price, y };
+    });
+  }, [points, chartGeometry.chartHeight]);
+
+  const maPath = useMemo(() => {
+    if (points.length === 0) return "";
+    const closes = points.map((p) => p.close);
+    const minPrice = Math.min(...closes);
+    const maxPrice = Math.max(...closes);
+    const priceRange = maxPrice - minPrice || 1;
+
+    const maValues = calculateMovingAverage(points, 20);
+    const coordinates = maValues.map((maValue, index) => {
+      const x =
+        padding +
+        (index / Math.max(points.length - 1, 1)) * chartGeometry.chartWidth;
+      const normalized = (maValue - minPrice) / priceRange;
+      const y =
+        padding +
+        chartGeometry.chartHeight -
+        normalized * chartGeometry.chartHeight;
+      return { x, y };
+    });
+
+    return coordinates
+      .map((point, index) => {
+        return `${index === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+      })
+      .join(" ");
+  }, [points, chartGeometry.chartWidth, chartGeometry.chartHeight]);
+
+  const ma100Path = useMemo(() => {
+    if (points.length === 0) return "";
+    const closes = points.map((p) => p.close);
+    const minPrice = Math.min(...closes);
+    const maxPrice = Math.max(...closes);
+    const priceRange = maxPrice - minPrice || 1;
+
+    const maValues = calculateMovingAverage(points, 100);
+    const coordinates = maValues.map((maValue, index) => {
+      const x =
+        padding +
+        (index / Math.max(points.length - 1, 1)) * chartGeometry.chartWidth;
+      const normalized = (maValue - minPrice) / priceRange;
+      const y =
+        padding +
+        chartGeometry.chartHeight -
+        normalized * chartGeometry.chartHeight;
+      return { x, y };
+    });
+
+    return coordinates
+      .map((point, index) => {
+        return `${index === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+      })
+      .join(" ");
+  }, [points, chartGeometry.chartWidth, chartGeometry.chartHeight]);
 
   const latest = points[points.length - 1]?.close;
   const first = points[0]?.close;
@@ -319,6 +402,8 @@ export function StockChart({
     : "rgba(15, 23, 42, 0.95)";
   const axisColor = isClearMode ? "#475569" : "#64748b";
   const themeTransition = `${CHART_THEME_TRANSITION_MS}ms ease`;
+  const showMa20 = range === "month" || range === "ytd";
+  const showMa100 = range === "ytd";
 
   function handlePointerMove(event: ReactPointerEvent<SVGSVGElement>) {
     if (chartGeometry.coordinates.length === 0) {
@@ -471,6 +556,56 @@ export function StockChart({
               {delta.toFixed(2)} ({deltaPct >= 0 ? "+" : ""}
               {deltaPct.toFixed(2)}%)
             </p>
+            {showMa20 ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginTop: 10,
+                  fontSize: 11,
+                  color: mutedTextColor,
+                }}
+              >
+                <svg width="20" height="8" viewBox="0 0 20 8">
+                  <line
+                    x1="0"
+                    y1="4"
+                    x2="20"
+                    y2="4"
+                    stroke={isClearMode ? "#f97316" : "#fb923c"}
+                    strokeWidth="2"
+                    strokeDasharray="5 5"
+                  />
+                </svg>
+                <span>MA(20)</span>
+              </div>
+            ) : null}
+            {showMa100 ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginTop: 8,
+                  fontSize: 11,
+                  color: mutedTextColor,
+                }}
+              >
+                <svg width="20" height="8" viewBox="0 0 20 8">
+                  <line
+                    x1="0"
+                    y1="4"
+                    x2="20"
+                    y2="4"
+                    stroke={isClearMode ? "#a855f7" : "#d946ef"}
+                    strokeWidth="2"
+                    strokeDasharray="3 7"
+                  />
+                </svg>
+                <span>MA(100)</span>
+              </div>
+            ) : null}
           </div>
           <div style={{ width: "100%", overflowX: "auto" }}>
             <div style={{ minWidth: 500, position: "relative" }}>
@@ -565,6 +700,19 @@ export function StockChart({
                     style={{ transition: `stroke ${themeTransition}` }}
                   />
                 ))}
+                {yAxisPrices.map((item) => (
+                  <text
+                    key={`price-${item.price}`}
+                    x={12}
+                    y={item.y + 4}
+                    fontSize="11"
+                    fill={mutedTextColor}
+                    textAnchor="start"
+                    style={{ transition: `fill ${themeTransition}` }}
+                  >
+                    ${item.price.toFixed(2)}
+                  </text>
+                ))}
                 <path
                   d={chartGeometry.areaPath}
                   fill={`url(#${gradientId})`}
@@ -579,6 +727,36 @@ export function StockChart({
                   strokeLinejoin="round"
                   style={{ transition: `stroke ${themeTransition}` }}
                 />
+                {showMa20 && maPath ? (
+                  <path
+                    d={maPath}
+                    fill="none"
+                    stroke={isClearMode ? "#f97316" : "#fb923c"}
+                    strokeWidth="2"
+                    strokeDasharray="5 5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      transition: `stroke ${themeTransition}`,
+                      opacity: 0.75,
+                    }}
+                  />
+                ) : null}
+                {showMa100 && ma100Path ? (
+                  <path
+                    d={ma100Path}
+                    fill="none"
+                    stroke={isClearMode ? "#a855f7" : "#d946ef"}
+                    strokeWidth="2"
+                    strokeDasharray="3 7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      transition: `stroke ${themeTransition}`,
+                      opacity: 0.7,
+                    }}
+                  />
+                ) : null}
                 {hoveredPoint ? (
                   <>
                     <line
