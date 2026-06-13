@@ -108,7 +108,7 @@ export function StockForecastCard({
             onClick={(event) => event.stopPropagation()}
           >
             <div className={styles.helpHeader}>
-              <h3 className={styles.helpTitle}>MF Velocity</h3>
+              <h3 className={styles.helpTitle}>MF Velocity (14d, shift 5d)</h3>
               <button
                 type="button"
                 className={styles.helpCloseButton}
@@ -119,12 +119,12 @@ export function StockForecastCard({
             </div>
 
             <p className={styles.helpText}>
-              MF Velocity shows how fast short-term money flow is changing vs
-              its 90-day baseline.
+              MF Velocity compares the latest CMF14 window to a CMF14 window
+              that ends 5 trading days earlier.
             </p>
             <p className={styles.helpText}>
-              Positive means stronger buying pressure. Negative means weaker
-              than normal.
+              It is shown as a percent change. Positive means strengthening
+              money flow, negative means weakening.
             </p>
           </div>
         </div>

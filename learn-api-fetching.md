@@ -114,7 +114,7 @@ CMF needs daily OHLCV data (`high`, `low`, `close`, `volume`).
 - Primary: `fetchYahooDailyOhlcv(symbol)` from Yahoo chart API (`range=1y`, `interval=1d`)
 - Fallback: `fetchNasdaqDailyOhlcv(symbol)` based on Nasdaq historical rows
 
-If at least 7 valid points exist, metrics are computed.
+If at least 7 valid points exist, CMF metrics are computed.
 
 ### 4.2 CMF formula used
 
@@ -141,7 +141,11 @@ CMF = sum(multiplier * volume) / sum(volume)
 
 - `cmf7d`: CMF over last 7 days
 - `cmf7dAvg90d`: average of rolling 7d CMF windows over recent lookback
-- `mfVelocity`: percentage change between latest 7d CMF and previous 7d CMF window
+- `mfVelocity`: percent change between latest CMF14 and a CMF14 window shifted by 5 trading days
+
+Note:
+
+- This preserves percent-style velocity math while reducing noise versus a 1-day shift.
 
 UI then computes:
 

@@ -1,5 +1,5 @@
 import { HeroSection2 } from "../components/hero-section-2";
-import { StockSnapshotSection } from "../components/stock-snapshot-section";
+import { StocksPageClient } from "./stocks-page-client";
 import {
   fetchAverageVolume7d,
   fetchAverageVolume90d,
@@ -23,6 +23,38 @@ export default async function StocksPage() {
     })),
   );
 
+  const stocksForClient = stocksWithQuotes.map((stock, originalIndex) => {
+    const dayChangePct =
+      stock.quote && stock.quote.previousClose > 0
+        ? ((stock.quote.close - stock.quote.previousClose) /
+            stock.quote.previousClose) *
+          100
+        : null;
+
+    const volumeDeltaPct =
+      stock.avgVolume7d !== null &&
+      stock.avgVolume90d !== null &&
+      stock.avgVolume90d > 0
+        ? ((stock.avgVolume7d - stock.avgVolume90d) / stock.avgVolume90d) * 100
+        : null;
+
+    const cmfDelta =
+      stock.cmfMetrics.cmf7d !== null && stock.cmfMetrics.cmf7dAvg90d !== null
+        ? stock.cmfMetrics.cmf7d - stock.cmfMetrics.cmf7dAvg90d
+        : null;
+
+    return {
+      ...stock,
+      originalIndex,
+      metrics: {
+        dayChangePct,
+        volumeDeltaPct,
+        cmfDelta,
+        mfVelocity: stock.cmfMetrics.mfVelocity,
+      },
+    };
+  });
+
   return (
     <main
       style={{
@@ -43,20 +75,8 @@ export default async function StocksPage() {
       >
         <HeroSection2 />
 
-        {stocksWithQuotes.length > 0 ? (
-          stocksWithQuotes.map((stock) => (
-            <StockSnapshotSection
-              key={stock.symbol}
-              title={stock.symbol}
-              stockName={stock.name}
-              logoUrl={stock.logoUrl}
-              quote={stock.quote}
-              avgVolume7d={stock.avgVolume7d}
-              avgVolume90d={stock.avgVolume90d}
-              cmfMetrics={stock.cmfMetrics}
-              showChart={stock.showChart}
-            />
-          ))
+        {stocksForClient.length > 0 ? (
+          <StocksPageClient stocks={stocksForClient} />
         ) : (
           <section
             style={{

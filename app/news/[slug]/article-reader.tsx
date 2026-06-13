@@ -44,7 +44,7 @@ export function ArticleReader({ article }: ArticleReaderProps) {
     ? "1px solid rgba(15, 23, 42, 0.2)"
     : "1px solid rgba(148, 163, 184, 0.35)";
   const toggleThumbTransform = isClearMode
-    ? "translateX(88px)"
+    ? "translateX(78px)"
     : "translateX(0px)";
 
   return (
@@ -134,8 +134,8 @@ export function ArticleReader({ article }: ArticleReaderProps) {
                 }
                 style={{
                   position: "relative",
-                  width: 174,
-                  height: 44,
+                  width: 150,
+                  height: 38,
                   borderRadius: 999,
                   border: toggleTrackBorder,
                   background: toggleTrackBackground,
@@ -153,20 +153,20 @@ export function ArticleReader({ article }: ArticleReaderProps) {
                   aria-hidden="true"
                   style={{
                     position: "absolute",
-                    left: 13,
+                    left: 10,
                     top: "50%",
                     transform: "translateY(-50%)",
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: 6,
+                    gap: 5,
                     color: isClearMode ? "rgba(30, 41, 59, 0.65)" : "#f8fafc",
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 700,
                     transition: "color 500ms ease, opacity 500ms ease",
                     opacity: isClearMode ? 0.7 : 1,
                   }}
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M21 14.2A9 9 0 1 1 9.8 3a7 7 0 0 0 11.2 11.2Z"
                       stroke="currentColor"
@@ -182,22 +182,22 @@ export function ArticleReader({ article }: ArticleReaderProps) {
                   aria-hidden="true"
                   style={{
                     position: "absolute",
-                    right: 13,
+                    right: 10,
                     top: "50%",
                     transform: "translateY(-50%)",
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: 6,
+                    gap: 5,
                     color: isClearMode
                       ? "#0f172a"
                       : "rgba(226, 232, 240, 0.75)",
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 700,
                     transition: "color 500ms ease, opacity 500ms ease",
                     opacity: isClearMode ? 1 : 0.75,
                   }}
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                     <circle
                       cx="12"
                       cy="12"
@@ -221,8 +221,8 @@ export function ArticleReader({ article }: ArticleReaderProps) {
                     position: "absolute",
                     top: 3,
                     left: 3,
-                    width: 80,
-                    height: 36,
+                    width: 66,
+                    height: 30,
                     borderRadius: 999,
                     background: isClearMode
                       ? "linear-gradient(180deg, #ffffff, #f8fafc)"

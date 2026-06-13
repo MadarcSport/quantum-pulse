@@ -14,6 +14,7 @@ type StockChartProps = {
   data: ChartRanges;
   changeReference?: ChartChangeReference;
   showHeading?: boolean;
+  theme?: "dark" | "clear";
 };
 
 type RangeKey = keyof ChartRanges;
@@ -65,6 +66,8 @@ const DATE_TOOLTIP_FORMATTER = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
   year: "numeric",
 });
+
+const CHART_THEME_TRANSITION_MS = 1500;
 
 function getTickIndices(length: number, maxTicks = 5) {
   if (length <= 0) {
@@ -216,6 +219,7 @@ export function StockChart({
   data,
   changeReference,
   showHeading = true,
+  theme = "dark",
 }: StockChartProps) {
   const [range, setRange] = useState<RangeKey>("month");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -263,6 +267,58 @@ export function StockChart({
       ? (delta / baseline) * 100
       : 0;
   const deltaColor = delta >= 0 ? "#22c55e" : "#f87171";
+  const isClearMode = theme === "clear";
+
+  const cardBorder = isClearMode
+    ? "1px solid rgba(15, 23, 42, 0.14)"
+    : "1px solid rgba(148, 163, 184, 0.2)";
+  const cardBackground = isClearMode
+    ? "linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.95))"
+    : "rgba(15, 23, 42, 0.72)";
+  const headingColor = isClearMode ? "#0f172a" : "#f8fafc";
+  const mutedTextColor = isClearMode ? "#64748b" : "#94a3b8";
+  const strongTextColor = isClearMode ? "#0f172a" : "#f8fafc";
+  const activeBorderColor = isClearMode
+    ? "1px solid rgba(2, 132, 199, 0.72)"
+    : "1px solid rgba(56, 189, 248, 0.9)";
+  const activeButtonBackground = isClearMode
+    ? "rgba(2, 132, 199, 0.14)"
+    : "rgba(14, 165, 233, 0.18)";
+  const inactiveBorderColor = isClearMode
+    ? "1px solid rgba(100, 116, 139, 0.45)"
+    : "1px solid rgba(148, 163, 184, 0.35)";
+  const inactiveButtonColor = isClearMode ? "#334155" : "#cbd5e1";
+  const activeButtonColor = isClearMode ? "#0c4a6e" : "#e0f2fe";
+  const tooltipBorder = isClearMode
+    ? "1px solid rgba(15, 23, 42, 0.2)"
+    : "1px solid rgba(148, 163, 184, 0.25)";
+  const tooltipBackground = isClearMode
+    ? "rgba(255, 255, 255, 0.97)"
+    : "rgba(15, 23, 42, 0.94)";
+  const tooltipShadow = isClearMode
+    ? "0 12px 30px rgba(15, 23, 42, 0.16)"
+    : "0 16px 36px rgba(2, 6, 23, 0.42)";
+  const chartRectFill = isClearMode
+    ? "rgba(226, 232, 240, 0.55)"
+    : "rgba(15, 23, 42, 0.6)";
+  const gridStroke = isClearMode
+    ? "rgba(100, 116, 139, 0.3)"
+    : "rgba(148, 163, 184, 0.22)";
+  const lineColor = isClearMode ? "#0284c7" : "#38bdf8";
+  const gradientTop = isClearMode
+    ? "rgba(2, 132, 199, 0.2)"
+    : "rgba(56, 189, 248, 0.24)";
+  const gradientBottom = isClearMode
+    ? "rgba(2, 132, 199, 0)"
+    : "rgba(56, 189, 248, 0)";
+  const hoverLineColor = isClearMode
+    ? "rgba(14, 116, 144, 0.6)"
+    : "rgba(125, 211, 252, 0.7)";
+  const hoverPointStroke = isClearMode
+    ? "rgba(248, 250, 252, 0.95)"
+    : "rgba(15, 23, 42, 0.95)";
+  const axisColor = isClearMode ? "#475569" : "#64748b";
+  const themeTransition = `${CHART_THEME_TRANSITION_MS}ms ease`;
 
   function handlePointerMove(event: ReactPointerEvent<SVGSVGElement>) {
     if (chartGeometry.coordinates.length === 0) {
@@ -295,12 +351,13 @@ export function StockChart({
   return (
     <section
       style={{
-        border: "1px solid rgba(148, 163, 184, 0.2)",
+        border: cardBorder,
         borderRadius: 16,
-        background: "rgba(15, 23, 42, 0.72)",
+        background: cardBackground,
         padding: 20,
         display: "grid",
         gap: 14,
+        transition: `border-color ${themeTransition}, background ${themeTransition}`,
       }}
     >
       {showHeading ? (
@@ -313,7 +370,14 @@ export function StockChart({
             flexWrap: "wrap",
           }}
         >
-          <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#f8fafc" }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "1.25rem",
+              color: headingColor,
+              transition: `color ${themeTransition}`,
+            }}
+          >
             {symbol.toUpperCase()} Price Chart
           </h2>
           <div style={{ display: "flex", gap: 8 }}>
@@ -325,17 +389,16 @@ export function StockChart({
                   type="button"
                   onClick={() => handleRangeChange(option.key)}
                   style={{
-                    border: isActive
-                      ? "1px solid rgba(56, 189, 248, 0.9)"
-                      : "1px solid rgba(148, 163, 184, 0.35)",
+                    border: isActive ? activeBorderColor : inactiveBorderColor,
                     background: isActive
-                      ? "rgba(14, 165, 233, 0.18)"
+                      ? activeButtonBackground
                       : "transparent",
-                    color: isActive ? "#e0f2fe" : "#cbd5e1",
+                    color: isActive ? activeButtonColor : inactiveButtonColor,
                     borderRadius: 999,
                     padding: "7px 14px",
                     fontSize: 13,
                     cursor: "pointer",
+                    transition: `border-color ${themeTransition}, background ${themeTransition}, color ${themeTransition}`,
                   }}
                 >
                   {option.label}
@@ -363,17 +426,14 @@ export function StockChart({
                 type="button"
                 onClick={() => handleRangeChange(option.key)}
                 style={{
-                  border: isActive
-                    ? "1px solid rgba(56, 189, 248, 0.9)"
-                    : "1px solid rgba(148, 163, 184, 0.35)",
-                  background: isActive
-                    ? "rgba(14, 165, 233, 0.18)"
-                    : "transparent",
-                  color: isActive ? "#e0f2fe" : "#cbd5e1",
+                  border: isActive ? activeBorderColor : inactiveBorderColor,
+                  background: isActive ? activeButtonBackground : "transparent",
+                  color: isActive ? activeButtonColor : inactiveButtonColor,
                   borderRadius: 999,
                   padding: "7px 14px",
                   fontSize: 13,
                   cursor: "pointer",
+                  transition: `border-color ${themeTransition}, background ${themeTransition}, color ${themeTransition}`,
                 }}
               >
                 {option.label}
@@ -393,9 +453,18 @@ export function StockChart({
               flexWrap: "wrap",
             }}
           >
-            <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
+            <p
+              style={{
+                margin: 0,
+                color: mutedTextColor,
+                fontSize: 13,
+                transition: `color ${themeTransition}`,
+              }}
+            >
               Last:{" "}
-              <span style={{ color: "#f8fafc" }}>${latest?.toFixed(2)}</span>
+              <span style={{ color: strongTextColor }}>
+                ${latest?.toFixed(2)}
+              </span>
             </p>
             <p style={{ margin: 0, color: deltaColor, fontSize: 13 }}>
               {delta >= 0 ? "+" : ""}
@@ -415,19 +484,21 @@ export function StockChart({
                     pointerEvents: "none",
                     zIndex: 1,
                     minWidth: 132,
-                    border: "1px solid rgba(148, 163, 184, 0.25)",
+                    border: tooltipBorder,
                     borderRadius: 12,
-                    background: "rgba(15, 23, 42, 0.94)",
+                    background: tooltipBackground,
                     padding: "10px 12px",
-                    boxShadow: "0 16px 36px rgba(2, 6, 23, 0.42)",
+                    boxShadow: tooltipShadow,
+                    transition: `border-color ${themeTransition}, background ${themeTransition}, box-shadow ${themeTransition}`,
                   }}
                 >
                   <p
                     style={{
                       margin: 0,
-                      color: "#94a3b8",
+                      color: mutedTextColor,
                       fontSize: 11,
                       whiteSpace: "nowrap",
+                      transition: `color ${themeTransition}`,
                     }}
                   >
                     {formatTooltipLabel(hoveredPoint.label, range)}
@@ -435,9 +506,10 @@ export function StockChart({
                   <p
                     style={{
                       margin: "4px 0 0",
-                      color: "#f8fafc",
+                      color: strongTextColor,
                       fontSize: 13,
                       fontWeight: 600,
+                      transition: `color ${themeTransition}`,
                     }}
                   >
                     ${hoveredPoint.close.toFixed(2)}
@@ -460,8 +532,16 @@ export function StockChart({
               >
                 <defs>
                   <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="rgba(56, 189, 248, 0.24)" />
-                    <stop offset="100%" stopColor="rgba(56, 189, 248, 0)" />
+                    <stop
+                      offset="0%"
+                      stopColor={gradientTop}
+                      style={{ transition: `stop-color ${themeTransition}` }}
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor={gradientBottom}
+                      style={{ transition: `stop-color ${themeTransition}` }}
+                    />
                   </linearGradient>
                 </defs>
                 <rect
@@ -469,7 +549,8 @@ export function StockChart({
                   y="0"
                   width={width}
                   height={height}
-                  fill="rgba(15, 23, 42, 0.6)"
+                  fill={chartRectFill}
+                  style={{ transition: `fill ${themeTransition}` }}
                 />
                 {gridLines.map((lineY) => (
                   <line
@@ -478,19 +559,25 @@ export function StockChart({
                     x2={width - padding}
                     y1={lineY}
                     y2={lineY}
-                    stroke="rgba(148, 163, 184, 0.22)"
+                    stroke={gridStroke}
                     strokeDasharray="4 6"
                     strokeWidth="1"
+                    style={{ transition: `stroke ${themeTransition}` }}
                   />
                 ))}
-                <path d={chartGeometry.areaPath} fill={`url(#${gradientId})`} />
+                <path
+                  d={chartGeometry.areaPath}
+                  fill={`url(#${gradientId})`}
+                  style={{ transition: `fill ${themeTransition}` }}
+                />
                 <path
                   d={chartGeometry.path}
                   fill="none"
-                  stroke="#38bdf8"
+                  stroke={lineColor}
                   strokeWidth="3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  style={{ transition: `stroke ${themeTransition}` }}
                 />
                 {hoveredPoint ? (
                   <>
@@ -499,17 +586,21 @@ export function StockChart({
                       x2={hoveredPoint.x}
                       y1={padding}
                       y2={height - padding}
-                      stroke="rgba(125, 211, 252, 0.7)"
+                      stroke={hoverLineColor}
                       strokeDasharray="4 6"
                       strokeWidth="1"
+                      style={{ transition: `stroke ${themeTransition}` }}
                     />
                     <circle
                       cx={hoveredPoint.x}
                       cy={hoveredPoint.y}
                       r="5.5"
-                      fill="#38bdf8"
-                      stroke="rgba(15, 23, 42, 0.95)"
+                      fill={lineColor}
+                      stroke={hoverPointStroke}
                       strokeWidth="3"
+                      style={{
+                        transition: `fill ${themeTransition}, stroke ${themeTransition}`,
+                      }}
                     />
                   </>
                 ) : null}
@@ -521,8 +612,9 @@ export function StockChart({
                   justifyContent: "space-between",
                   gap: 8,
                   padding: `6px ${padding}px 0`,
-                  color: "#64748b",
+                  color: axisColor,
                   fontSize: 11,
+                  transition: `color ${themeTransition}`,
                 }}
               >
                 {axisTickIndices.map((tickIndex, index) => (

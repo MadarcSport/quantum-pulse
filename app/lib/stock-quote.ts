@@ -93,6 +93,7 @@ type DailyQuotePoint = {
 };
 
 const WARNED_KEYS = new Set<string>();
+let yahooRateLimitedUntil = 0;
 const nasdaqHistoryRowsCache = new Map<
   string,
   Promise<
@@ -106,8 +107,29 @@ const nasdaqHistoryRowsCache = new Map<
     }>
   >
 >();
-const FETCH_TIMEOUT_MS = 7_000;
-const YAHOO_RETRY_COUNT = 1;
+function getPositiveEnvNumber(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) {
+    return fallback;
+  }
+
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+const FETCH_TIMEOUT_MS = getPositiveEnvNumber("STOCK_FETCH_TIMEOUT_MS", 2500);
+const YAHOO_RETRY_COUNT = Math.max(
+  0,
+  Math.floor(getPositiveEnvNumber("STOCK_FETCH_RETRIES", 0)),
+);
+const YAHOO_RATE_LIMIT_COOLDOWN_MS = 5 * 60 * 1000;
+const ENABLE_DEV_MOCK_QUOTES =
+  process.env.NODE_ENV !== "production" &&
+  process.env.DISABLE_DEV_MOCK_QUOTES !== "1";
 
 const YAHOO_HEADERS: HeadersInit = {
   "user-agent":
@@ -125,6 +147,22 @@ function warnOnce(key: string, message: string): void {
 
   WARNED_KEYS.add(key);
   console.warn(`[stock-quote] ${message}`);
+}
+
+function isYahooTemporarilyRateLimited(): boolean {
+  return Date.now() < yahooRateLimitedUntil;
+}
+
+function markYahooRateLimit(status: number): void {
+  if (status !== 429) {
+    return;
+  }
+
+  yahooRateLimitedUntil = Date.now() + YAHOO_RATE_LIMIT_COOLDOWN_MS;
+  warnOnce(
+    "yahoo-rate-limit-cooldown",
+    "Yahoo Finance is rate-limiting requests (429). Temporarily falling back to Nasdaq.",
+  );
 }
 
 async function fetchWithTimeout(
@@ -178,6 +216,42 @@ async function fetchWithRetry(
 
 function parseNasdaqNumber(value: string): number {
   return Number(value.replace(/[$,\s]/g, ""));
+}
+
+function hashSymbol(symbol: string): number {
+  let hash = 0;
+  for (const char of symbol) {
+    hash = (hash * 31 + char.charCodeAt(0)) % 1_000_000;
+  }
+  return hash;
+}
+
+function getDevMockQuote(symbol: string): StockQuote {
+  const normalizedSymbol = symbol.toUpperCase();
+  const seed = hashSymbol(normalizedSymbol);
+  const base = 20 + (seed % 9000) / 100;
+  const movePct = ((seed % 700) - 350) / 1000;
+  const close = Number(base.toFixed(2));
+  const previousClose = Number((close / (1 + movePct)).toFixed(2));
+  const open = Number((close * (1 - movePct / 2)).toFixed(2));
+  const high = Number((Math.max(open, close) * 1.01).toFixed(2));
+  const low = Number((Math.min(open, close) * 0.99).toFixed(2));
+  const volume = 500_000 + (seed % 5_000_000);
+  const { date } = formatDateTimeFromEpoch(Math.floor(Date.now() / 1000));
+
+  return {
+    symbol: normalizedSymbol,
+    date,
+    time: "Local Mock",
+    previousClose,
+    open,
+    high,
+    low,
+    close,
+    volume,
+    source: "nasdaq",
+    quotePath: "nasdaq-history",
+  };
 }
 
 function formatDateTimeFromEpoch(epochSeconds: number): {
@@ -264,6 +338,10 @@ function isBeforeNyCloseOnWeekday(): boolean {
 async function fetchYahooDailyQuote(
   symbol: string,
 ): Promise<StockQuote | null> {
+  if (isYahooTemporarilyRateLimited()) {
+    return null;
+  }
+
   const normalizedSymbol = symbol.toUpperCase();
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${normalizedSymbol}?range=1y&interval=1d&includePrePost=false&events=div%2Csplits`;
 
@@ -281,6 +359,7 @@ async function fetchYahooDailyQuote(
     );
 
     if (!response.ok) {
+      markYahooRateLimit(response.status);
       warnOnce(
         `yahoo-daily-quote-${normalizedSymbol}-${response.status}`,
         `Yahoo daily quote request failed for ${normalizedSymbol} with status ${response.status}. Trying Yahoo live quote fallback.`,
@@ -380,6 +459,10 @@ async function fetchYahooDailyQuote(
 }
 
 async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
+  if (isYahooTemporarilyRateLimited()) {
+    return null;
+  }
+
   const normalizedSymbol = symbol.toUpperCase();
   const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${normalizedSymbol}`;
 
@@ -397,6 +480,7 @@ async function fetchYahooQuote(symbol: string): Promise<StockQuote | null> {
     );
 
     if (!response.ok) {
+      markYahooRateLimit(response.status);
       warnOnce(
         `yahoo-quote-${normalizedSymbol}-${response.status}`,
         `Yahoo quote request failed for ${normalizedSymbol} with status ${response.status}. Trying Yahoo chart quote fallback.`,
@@ -499,6 +583,10 @@ function getExtrema(
 async function fetchYahooChartQuote(
   symbol: string,
 ): Promise<StockQuote | null> {
+  if (isYahooTemporarilyRateLimited()) {
+    return null;
+  }
+
   const normalizedSymbol = symbol.toUpperCase();
   const url = `https://query2.finance.yahoo.com/v8/finance/chart/${normalizedSymbol}?range=1d&interval=1m&includePrePost=true&events=div%2Csplits`;
 
@@ -516,6 +604,7 @@ async function fetchYahooChartQuote(
     );
 
     if (!response.ok) {
+      markYahooRateLimit(response.status);
       warnOnce(
         `yahoo-chart-quote-${normalizedSymbol}-${response.status}`,
         `Yahoo chart quote request failed for ${normalizedSymbol} with status ${response.status}. Falling back to Nasdaq history.`,
@@ -700,6 +789,13 @@ export async function fetchStockQuote(
       `stock-quote-unavailable-${normalizedSymbol}`,
       `Quote data is unavailable for ${normalizedSymbol} after Yahoo and Nasdaq fallbacks.`,
     );
+    if (ENABLE_DEV_MOCK_QUOTES) {
+      warnOnce(
+        `stock-quote-dev-mock-${normalizedSymbol}`,
+        `Using local mock quote for ${normalizedSymbol} in development mode due upstream fetch failures.`,
+      );
+      return getDevMockQuote(normalizedSymbol);
+    }
     return null;
   }
 
@@ -722,6 +818,13 @@ export async function fetchStockQuote(
       `stock-quote-invalid-nasdaq-${normalizedSymbol}`,
       `Nasdaq fallback quote contained invalid numeric fields for ${normalizedSymbol}.`,
     );
+    if (ENABLE_DEV_MOCK_QUOTES) {
+      warnOnce(
+        `stock-quote-dev-mock-invalid-${normalizedSymbol}`,
+        `Using local mock quote for ${normalizedSymbol} in development mode due invalid fallback payload.`,
+      );
+      return getDevMockQuote(normalizedSymbol);
+    }
     return null;
   }
 
@@ -743,6 +846,10 @@ export async function fetchStockQuote(
 async function fetchYahooAverageVolume90d(
   symbol: string,
 ): Promise<number | null> {
+  if (isYahooTemporarilyRateLimited()) {
+    return null;
+  }
+
   const normalizedSymbol = symbol.toUpperCase();
   try {
     const response = await fetchWithRetry(
@@ -758,6 +865,7 @@ async function fetchYahooAverageVolume90d(
     );
 
     if (!response.ok) {
+      markYahooRateLimit(response.status);
       warnOnce(
         `yahoo-avg-volume-${normalizedSymbol}-${response.status}`,
         `Yahoo average volume request failed for ${normalizedSymbol} with status ${response.status}. Falling back to Nasdaq history.`,
@@ -787,6 +895,10 @@ async function fetchYahooAverageVolume90d(
 }
 
 async function fetchYahooDailyOhlcv(symbol: string): Promise<OhlcvPoint[]> {
+  if (isYahooTemporarilyRateLimited()) {
+    return [];
+  }
+
   const normalizedSymbol = symbol.toUpperCase();
   try {
     const response = await fetchWithRetry(
@@ -802,6 +914,7 @@ async function fetchYahooDailyOhlcv(symbol: string): Promise<OhlcvPoint[]> {
     );
 
     if (!response.ok) {
+      markYahooRateLimit(response.status);
       warnOnce(
         `yahoo-ohlcv-${normalizedSymbol}-${response.status}`,
         `Yahoo OHLCV request failed for ${normalizedSymbol} with status ${response.status}. Falling back to Nasdaq history.`,
@@ -930,19 +1043,24 @@ function computeRollingCmfAverage(
 }
 
 function computeMoneyFlowVelocity(points: OhlcvPoint[]): number | null {
-  if (points.length < 8) {
+  const period = 14;
+  const shiftDays = 5;
+
+  if (points.length < period + shiftDays) {
     return null;
   }
 
-  const latestCmf7d = computeCmf(points.slice(-7));
-  const previousCmf7d = computeCmf(points.slice(-8, -1));
+  const latestCmf14d = computeCmf(points.slice(-period));
+  const previousCmf14d = computeCmf(
+    points.slice(-(period + shiftDays), -shiftDays),
+  );
 
-  if (latestCmf7d === null || previousCmf7d === null) {
+  if (latestCmf14d === null || previousCmf14d === null) {
     return null;
   }
 
-  const denominator = Math.max(Math.abs(previousCmf7d), 0.01);
-  return ((latestCmf7d - previousCmf7d) / denominator) * 100;
+  const denominator = Math.max(Math.abs(previousCmf14d), 0.01);
+  return ((latestCmf14d - previousCmf14d) / denominator) * 100;
 }
 
 function getCmfMetrics(points: OhlcvPoint[]): StockCmfMetrics {
@@ -1005,7 +1123,7 @@ export async function fetchAverageVolume7d(
 ): Promise<number | null> {
   const yahooAvg90d = await fetchYahooAverageVolume90d(symbol);
 
-  if (yahooAvg90d !== null) {
+  if (yahooAvg90d !== null && !isYahooTemporarilyRateLimited()) {
     const normalizedSymbol = symbol.toUpperCase();
     try {
       const response = await fetchWithRetry(
@@ -1031,6 +1149,8 @@ export async function fetchAverageVolume7d(
           const total = recent.reduce((sum, value) => sum + value, 0);
           return total / recent.length;
         }
+      } else {
+        markYahooRateLimit(response.status);
       }
     } catch {
       // fall through to Nasdaq fallback

@@ -19,11 +19,14 @@ export default function RootLayout({
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const hasClerkEnv =
     Boolean(publishableKey) && Boolean(process.env.CLERK_SECRET_KEY);
+  const enableDevClerk = process.env.ENABLE_DEV_CLERK === "1";
+  const shouldUseClerk =
+    hasClerkEnv && (process.env.NODE_ENV === "production" || enableDevClerk);
 
   return (
     <html lang="en">
       <body>
-        {hasClerkEnv ? (
+        {shouldUseClerk ? (
           <ClerkProvider publishableKey={publishableKey}>
             <header
               style={{

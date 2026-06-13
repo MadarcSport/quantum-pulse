@@ -15,16 +15,25 @@ export const revalidate = 0;
 
 export default async function Home() {
   const enabledStocks = getEnabledStocks();
-  const stocksWithQuotes = await Promise.all(
-    enabledStocks.map(async (stock) => ({
-      ...stock,
-      quote: await fetchStockQuote(stock.symbol),
-      avgVolume7d: await fetchAverageVolume7d(stock.symbol),
-      avgVolume90d: await fetchAverageVolume90d(stock.symbol),
-      cmfMetrics: await fetchCmfMetrics(stock.symbol),
-    })),
+  const previewStocks = enabledStocks.slice(0, 3);
+  const previewStocksWithQuotes = await Promise.all(
+    previewStocks.map(async (stock) => {
+      const [quote, avgVolume7d, avgVolume90d, cmfMetrics] = await Promise.all([
+        fetchStockQuote(stock.symbol),
+        fetchAverageVolume7d(stock.symbol),
+        fetchAverageVolume90d(stock.symbol),
+        fetchCmfMetrics(stock.symbol),
+      ]);
+
+      return {
+        ...stock,
+        quote,
+        avgVolume7d,
+        avgVolume90d,
+        cmfMetrics,
+      };
+    }),
   );
-  const previewStocks = stocksWithQuotes.slice(0, 3);
 
   return (
     <main
@@ -46,8 +55,8 @@ export default async function Home() {
       >
         <HeroSection />
 
-        {stocksWithQuotes.length > 0 ? (
-          previewStocks.map((stock) => (
+        {previewStocksWithQuotes.length > 0 ? (
+          previewStocksWithQuotes.map((stock) => (
             <StockSnapshotSection
               key={stock.symbol}
               title={stock.symbol}
@@ -79,7 +88,7 @@ export default async function Home() {
           </section>
         )}
 
-        {stocksWithQuotes.length > previewStocks.length ? (
+        {enabledStocks.length > previewStocks.length ? (
           <div
             style={{
               display: "flex",

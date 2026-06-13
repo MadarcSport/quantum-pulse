@@ -135,7 +135,7 @@ export function TopNav({ authEnabled = true }: TopNavProps) {
     }
 
     return (
-      <Link href="/sign-in" style={getLinkStyle(false)}>
+      <Link href="/sign-in" style={authPillStyle}>
         Sign in
       </Link>
     );

@@ -61,7 +61,7 @@ sequenceDiagram
         Y-->>L: highs[], lows[], closes[], volumes[]
         L->>L: computeCmf(last 7d)
         L->>L: computeRollingCmfAverage(7d windows, lookback 90d)
-        L->>L: computeMoneyFlowVelocity(latest 7d vs previous 7d)
+        L->>L: computeMoneyFlowVelocity(latest CMF14 vs CMF14 shifted by 5d)
         L-->>P: cmf7d, cmf7dAvg90d, mfVelocity
     else Yahoo insufficient/failed
         L->>N: GET /historical
@@ -85,7 +85,7 @@ sequenceDiagram
 - `avgVolume90d`: arithmetic mean of recent 90 daily volumes.
 - `cmf7d`: CMF over last 7 days.
 - `cmf7dAvg90d`: average of rolling 7-day CMF windows over recent lookback.
-- `mfVelocity`: percent change between latest and prior 7-day CMF windows.
+- `mfVelocity`: percent change between latest CMF14 and a CMF14 window shifted by 5 trading days.
 
 ## 4. Where To Read In Code
 
