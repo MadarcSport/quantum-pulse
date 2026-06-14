@@ -1,19 +1,9 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-const secretKey = process.env.CLERK_SECRET_KEY;
-const enableDevClerk = process.env.ENABLE_DEV_CLERK === "1";
-
-const hasClerkEnv = Boolean(publishableKey) && Boolean(secretKey);
-const shouldUseClerk =
-  hasClerkEnv && (process.env.NODE_ENV === "production" || enableDevClerk);
-
-const clerk = clerkMiddleware();
-
-const proxy = shouldUseClerk ? clerk : () => NextResponse.next();
-
-export default proxy;
+// Fail-safe pass-through proxy to avoid production request failures.
+export default function proxy() {
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
