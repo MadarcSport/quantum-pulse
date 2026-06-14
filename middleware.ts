@@ -1,4 +1,5 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -9,11 +10,22 @@ const hasClerkEnv = Boolean(publishableKey) && Boolean(secretKey);
 const shouldUseClerk =
   hasClerkEnv && (process.env.NODE_ENV === "production" || enableDevClerk);
 
-const middleware = shouldUseClerk
-  ? clerkMiddleware()
-  : () => NextResponse.next();
+const clerk = clerkMiddleware();
 
-export default middleware;
+export default function middleware(req: NextRequest, event: NextFetchEvent) {
+  const pathname = req.nextUrl.pathname;
+
+  // Keep crawler metadata routes public even when Clerk is enabled.
+  if (pathname === "/robots.txt" || pathname === "/sitemap.xml") {
+    return NextResponse.next();
+  }
+
+  if (!shouldUseClerk) {
+    return NextResponse.next();
+  }
+
+  return clerk(req, event);
+}
 
 export const config = {
   matcher: [
