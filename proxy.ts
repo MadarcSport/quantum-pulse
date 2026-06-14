@@ -1,5 +1,4 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
-import type { NextFetchEvent, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -12,20 +11,9 @@ const shouldUseClerk =
 
 const clerk = clerkMiddleware();
 
-export default function middleware(req: NextRequest, event: NextFetchEvent) {
-  const pathname = req.nextUrl.pathname;
+const proxy = shouldUseClerk ? clerk : () => NextResponse.next();
 
-  // Keep crawler metadata routes public even when Clerk is enabled.
-  if (pathname === "/robots.txt" || pathname === "/sitemap.xml") {
-    return NextResponse.next();
-  }
-
-  if (!shouldUseClerk) {
-    return NextResponse.next();
-  }
-
-  return clerk(req, event);
-}
+export default proxy;
 
 export const config = {
   matcher: [
