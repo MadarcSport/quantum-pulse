@@ -1,6 +1,12 @@
 "use client";
 
-import { Show, SignInButton, UserButton } from "@clerk/nextjs";
+import {
+  ClerkFailed,
+  ClerkLoading,
+  Show,
+  SignInButton,
+  UserButton,
+} from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -100,7 +106,19 @@ export function TopNav({ authEnabled = true }: TopNavProps) {
     if (authEnabled) {
       return (
         <>
-          <Show when="signed-out">
+          <ClerkLoading>
+            <Link href="/sign-in" style={authPillStyle}>
+              Sign in
+            </Link>
+          </ClerkLoading>
+
+          <ClerkFailed>
+            <Link href="/sign-in" style={authPillStyle}>
+              Sign in
+            </Link>
+          </ClerkFailed>
+
+          <Show when="signed-out" treatPendingAsSignedOut>
             <SignInButton mode="modal" fallbackRedirectUrl="/">
               <button type="button" style={authPillStyle}>
                 Sign in
