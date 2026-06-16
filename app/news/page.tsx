@@ -10,6 +10,16 @@ export default async function NewsPage() {
     <main className={styles.pageRoot}>
       <section className={styles.pageShell}>
         <header className={styles.pageHeader}>
+          <div className={styles.bannerWrap}>
+            <Image
+              src="https://res.cloudinary.com/db7i9febj/image/upload/v1781586843/topBannerFrame01_oj9vu2.png"
+              alt="Quantum industry news banner"
+              fill
+              sizes="100vw"
+              className={styles.bannerImage}
+              unoptimized
+            />
+          </div>
           <p className={styles.kicker}>Quantum Industry News</p>
           <h1 className={styles.heading}>Latest News In Quantum Computing</h1>
           <p className={styles.description}>

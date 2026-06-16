@@ -21,6 +21,11 @@ a {
   text-decoration: none;
 }
 
+.brand-logo {
+  width: var(--brand-logo-size);
+  height: var(--brand-logo-size);
+}
+
 .top-nav-desktop {
   display: flex;
   align-items: center;
@@ -33,6 +38,11 @@ a {
 }
 
 @media (max-width: 760px) {
+  .brand-logo {
+    width: var(--brand-logo-mobile-size) !important;
+    height: var(--brand-logo-mobile-size) !important;
+  }
+
   .top-nav-desktop {
     display: none;
   }

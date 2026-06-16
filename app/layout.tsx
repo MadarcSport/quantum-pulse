@@ -64,7 +64,7 @@ export default function RootLayout({
                     textTransform: "uppercase",
                   }}
                 >
-                  <BrandLogo size={65} />
+                  <BrandLogo size={60} mobileSize={44} />
                   <span>Pulse</span>
                 </Link>
 
@@ -113,8 +113,8 @@ export default function RootLayout({
                     textTransform: "uppercase",
                   }}
                 >
-                  <BrandLogo size={65} />
-                  <span>Quantum Pulse</span>
+                  <BrandLogo size={65} mobileSize={44} />
+                  <span>Pulse</span>
                 </Link>
 
                 <TopNav authEnabled={false} />
