@@ -65,7 +65,7 @@ a {
     padding: 10px;
     border-radius: 14px;
     border: 1px solid rgba(148, 163, 184, 0.24);
-    background: rgba(2, 6, 23, 0.96);
+    background: rgba(8, 22, 85, 0.96);
     backdrop-filter: blur(14px);
     z-index: 50;
     box-shadow: 0 16px 38px rgba(2, 6, 23, 0.52);
