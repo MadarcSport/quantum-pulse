@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { clerkFrontendApiProxy } from "@clerk/nextjs/server";
+import { NextResponse, type NextRequest } from "next/server";
 
-// Fail-safe pass-through proxy to avoid production request failures.
-export default function proxy() {
+export default function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/__clerk")) {
+    return clerkFrontendApiProxy(request);
+  }
+
   return NextResponse.next();
 }
 
