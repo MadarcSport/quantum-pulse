@@ -4,7 +4,6 @@ import Link from "next/link";
 import { BrandLogo } from "./components/brand-logo";
 import { SiteFooter } from "./components/site-footer";
 import { TopNav } from "./components/top-nav";
-import { ClerkStatus } from "./components/clerk-status";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -13,29 +12,6 @@ export const metadata: Metadata = {
   title: "Stocks",
   description: "A Next.js project built with React and TypeScript.",
 };
-
-function decodeClerkFrontendApi(publishableKey?: string) {
-  if (!publishableKey) return "missing";
-
-  const encodedPart = publishableKey.split("_")[2];
-  if (!encodedPart) return "invalid-format";
-
-  try {
-    const padded = encodedPart.padEnd(
-      encodedPart.length + ((4 - (encodedPart.length % 4)) % 4),
-      "=",
-    );
-    const decoded = Buffer.from(padded, "base64").toString("utf8");
-
-    if (!decoded.endsWith("$") || !decoded.includes(".")) {
-      return "invalid-decoded-value";
-    }
-
-    return decoded.slice(0, -1);
-  } catch {
-    return "decode-failed";
-  }
-}
 
 export default function RootLayout({
   children,
@@ -48,18 +24,10 @@ export default function RootLayout({
   const shouldUseClerk =
     hasPublishableKey &&
     (process.env.NODE_ENV === "production" || enableDevClerk);
-  const clerkFrontendApi = decodeClerkFrontendApi(publishableKey);
-  const publishableKeyPrefix = publishableKey?.slice(0, 8) ?? "missing";
-  const publishableKeyLength = publishableKey?.length.toString() ?? "0";
 
   return (
     <html lang="en">
-      <body
-        data-clerk-enabled={shouldUseClerk ? "1" : "0"}
-        data-clerk-frontend-api={clerkFrontendApi}
-        data-clerk-key-prefix={publishableKeyPrefix}
-        data-clerk-key-length={publishableKeyLength}
-      >
+      <body>
         {shouldUseClerk ? (
           <ClerkProvider publishableKey={publishableKey}>
             <header
@@ -106,7 +74,6 @@ export default function RootLayout({
               </nav>
             </header>
 
-            <ClerkStatus />
             {children}
             <SiteFooter />
           </ClerkProvider>
@@ -156,7 +123,6 @@ export default function RootLayout({
               </nav>
             </header>
 
-            <ClerkStatus />
             {children}
             <SiteFooter />
           </>

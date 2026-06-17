@@ -416,6 +416,20 @@ async function fetchYahooDailyQuote(
       return null;
     }
 
+    const latestRawTimestamp = timestamps.at(-1);
+    const latestCompletePoint = points[points.length - 1];
+    if (
+      Number.isFinite(latestRawTimestamp) &&
+      latestCompletePoint &&
+      Number(latestRawTimestamp) > latestCompletePoint.timestamp
+    ) {
+      warnOnce(
+        `yahoo-daily-quote-incomplete-latest-${normalizedSymbol}`,
+        `Yahoo daily quote has a newer incomplete row for ${normalizedSymbol}. Trying Yahoo live quote fallback.`,
+      );
+      return null;
+    }
+
     const latestIndex = points.length - 1;
     const todayNyKey = getNyDateKeyFromEpoch(Math.floor(Date.now() / 1000));
     const latestNyKey = getNyDateKeyFromEpoch(points[latestIndex].timestamp);

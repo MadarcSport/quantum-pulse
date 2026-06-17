@@ -8,6 +8,7 @@ import {
   fetchCmfMetrics,
   fetchStockQuote,
 } from "./lib/stock-quote";
+import { saveStockIndicatorSnapshot } from "./lib/stock-indicator-snapshots";
 import { getEnabledStocks } from "./lib/stocks-config";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,14 @@ export default async function Home() {
         fetchAverageVolume90d(stock.symbol),
         fetchCmfMetrics(stock.symbol),
       ]);
+
+      await saveStockIndicatorSnapshot({
+        symbol: stock.symbol,
+        quote,
+        avgVolume7d,
+        avgVolume90d,
+        cmfMetrics,
+      });
 
       return {
         ...stock,

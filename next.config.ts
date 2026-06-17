@@ -2,14 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  async rewrites() {
-    return [
-      {
-        source: "/__clerk/:path*",
-        destination: "/clerk-proxy/:path*",
-      },
-    ];
-  },
   images: {
     remotePatterns: [
       {
