@@ -1,12 +1,18 @@
 import { SignIn } from "@clerk/nextjs";
 import Link from "next/link";
 
-export default function SignInPage() {
-  const hasClerkEnv =
-    Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) &&
-    Boolean(process.env.CLERK_SECRET_KEY);
+export const dynamic = "force-dynamic";
 
-  if (!hasClerkEnv) {
+export default function SignInPage() {
+  const hasPublishableKey = Boolean(
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+  );
+  const enableDevClerk = process.env.ENABLE_DEV_CLERK === "1";
+  const shouldUseClerk =
+    hasPublishableKey &&
+    (process.env.NODE_ENV === "production" || enableDevClerk);
+
+  if (!shouldUseClerk) {
     return (
       <main
         style={{
@@ -20,15 +26,15 @@ export default function SignInPage() {
         }}
       >
         <p style={{ margin: 0, maxWidth: 640, lineHeight: 1.6 }}>
-          Clerk auth is not configured yet. Add
+          Clerk auth is not enabled in this environment. Add
           <code style={{ marginLeft: 6, marginRight: 6 }}>
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
           </code>
-          and
+          to your environment variables, and set
           <code style={{ marginLeft: 6, marginRight: 6 }}>
-            CLERK_SECRET_KEY
+            ENABLE_DEV_CLERK=1
           </code>
-          to <code>.env.local</code> and restart the dev server.
+          for local development, then restart.
         </p>
         <p
           style={{

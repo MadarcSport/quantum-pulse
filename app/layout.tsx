@@ -6,6 +6,8 @@ import { SiteFooter } from "./components/site-footer";
 import { TopNav } from "./components/top-nav";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Stocks",
   description: "A Next.js project built with React and TypeScript.",
@@ -17,11 +19,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const hasClerkEnv =
-    Boolean(publishableKey) && Boolean(process.env.CLERK_SECRET_KEY);
+  const hasPublishableKey = Boolean(publishableKey);
   const enableDevClerk = process.env.ENABLE_DEV_CLERK === "1";
   const shouldUseClerk =
-    hasClerkEnv && (process.env.NODE_ENV === "production" || enableDevClerk);
+    hasPublishableKey &&
+    (process.env.NODE_ENV === "production" || enableDevClerk);
 
   return (
     <html lang="en">

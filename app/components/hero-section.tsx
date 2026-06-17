@@ -89,7 +89,7 @@ export function HeroSection() {
             color: "#cbd5e1",
           }}
         >
-          Selection of Stocks involved in Quantum Computing research,
+          Selection of companies involved in Quantum Computing research,
           development, or applications.
         </p>
       </div>
