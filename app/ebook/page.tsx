@@ -8,7 +8,7 @@ export default function EbookPage() {
           margin: 0,
         }}
       >
-        Ebook
+        Ebook and ressources
       </h1>
       <p
         style={{
