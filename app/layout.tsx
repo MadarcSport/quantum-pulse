@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BrandLogo } from "./components/brand-logo";
 import { SiteFooter } from "./components/site-footer";
 import { TopNav } from "./components/top-nav";
+import { ClerkStatus } from "./components/clerk-status";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body>
+      <body data-clerk-enabled={shouldUseClerk ? "1" : "0"}>
         {shouldUseClerk ? (
           <ClerkProvider publishableKey={publishableKey}>
             <header
@@ -74,6 +75,7 @@ export default function RootLayout({
               </nav>
             </header>
 
+            <ClerkStatus />
             {children}
             <SiteFooter />
           </ClerkProvider>
@@ -123,6 +125,7 @@ export default function RootLayout({
               </nav>
             </header>
 
+            <ClerkStatus />
             {children}
             <SiteFooter />
           </>
