@@ -4,13 +4,21 @@ import { useEffect, useState } from "react";
 
 export function ClerkStatus() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [frontendApi, setFrontendApi] = useState("");
 
   useEffect(() => {
     const v = document.body?.dataset?.clerkEnabled === "1";
+    const host = document.body?.dataset?.clerkFrontendApi ?? "missing";
     setEnabled(v);
+    setFrontendApi(host);
     // Helpful client-side diagnostic for deployed environments
-    // (does not log any secret value, only boolean presence)
-    console.log("[ClerkStatus] clerkEnabled:", v);
+    // (does not log any secret value, only boolean/key metadata)
+    console.log("[ClerkStatus]", {
+      clerkEnabled: v,
+      frontendApi: host,
+      keyPrefix: document.body?.dataset?.clerkKeyPrefix,
+      keyLength: document.body?.dataset?.clerkKeyLength,
+    });
   }, []);
 
   if (enabled === null) return null;
@@ -33,6 +41,8 @@ export function ClerkStatus() {
       }}
     >
       {enabled ? "Clerk enabled" : "Clerk disabled"}
+      <br />
+      <span style={{ fontWeight: 500 }}>{frontendApi}</span>
     </div>
   );
 }
