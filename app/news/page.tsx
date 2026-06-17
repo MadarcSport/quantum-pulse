@@ -23,9 +23,7 @@ export default async function NewsPage() {
           <p className={styles.kicker}>Quantum Industry News</p>
           <h1 className={styles.heading}>Latest News In Quantum Computing</h1>
           <p className={styles.description}>
-            Browse article pages generated from markdown files. Add a new
-            article in this folder and the index can pick it up without turning
-            the page into a one-off layout again.
+            Browse article pages generated from markdown files.
           </p>
         </header>
 
