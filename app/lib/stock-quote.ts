@@ -335,6 +335,55 @@ function isBeforeNyCloseOnWeekday(): boolean {
   return hour === 16 && minute === 0;
 }
 
+function isIncompleteCurrentNyDailyBar(epochSeconds: number): boolean {
+  if (!isBeforeNyCloseOnWeekday()) {
+    return false;
+  }
+
+  const todayNyKey = getNyDateKeyFromEpoch(Math.floor(Date.now() / 1000));
+  const pointNyKey = getNyDateKeyFromEpoch(epochSeconds);
+
+  return pointNyKey === todayNyKey;
+}
+
+function getTodayNyDateKey(): string {
+  return getNyDateKeyFromEpoch(Math.floor(Date.now() / 1000));
+}
+
+function parseNasdaqDateKey(value?: string): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashMatch) {
+    const month = slashMatch[1].padStart(2, "0");
+    const day = slashMatch[2].padStart(2, "0");
+    return `${slashMatch[3]}-${month}-${day}`;
+  }
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return getNyDateKeyFromEpoch(Math.floor(parsed.getTime() / 1000));
+}
+
+function isIncompleteCurrentNasdaqDailyRow(row: { date?: string }): boolean {
+  if (!isBeforeNyCloseOnWeekday()) {
+    return false;
+  }
+
+  return parseNasdaqDateKey(row.date) === getTodayNyDateKey();
+}
+
 async function fetchYahooDailyQuote(
   symbol: string,
 ): Promise<StockQuote | null> {
@@ -888,9 +937,17 @@ async function fetchYahooAverageVolume90d(
     }
 
     const json = (await response.json()) as YahooChartResponse;
-    const volumes = (
-      json.chart?.result?.[0]?.indicators?.quote?.[0]?.volume ?? []
-    ).filter((value): value is number => Number.isFinite(value));
+    const result = json.chart?.result?.[0];
+    const timestamps = result?.timestamp ?? [];
+    const rawVolumes = result?.indicators?.quote?.[0]?.volume ?? [];
+    const volumes = rawVolumes.filter((value, index): value is number => {
+      const timestamp = timestamps[index];
+      return (
+        Number.isFinite(value) &&
+        (!Number.isFinite(timestamp) ||
+          !isIncompleteCurrentNyDailyBar(Number(timestamp)))
+      );
+    });
 
     const recent = volumes.slice(-90);
     if (recent.length === 0) {
@@ -937,7 +994,9 @@ async function fetchYahooDailyOhlcv(symbol: string): Promise<OhlcvPoint[]> {
     }
 
     const json = (await response.json()) as YahooChartResponse;
-    const quote = json.chart?.result?.[0]?.indicators?.quote?.[0];
+    const result = json.chart?.result?.[0];
+    const quote = result?.indicators?.quote?.[0];
+    const timestamps = result?.timestamp ?? [];
     const highs = quote?.high ?? [];
     const lows = quote?.low ?? [];
     const closes = quote?.close ?? [];
@@ -952,12 +1011,15 @@ async function fetchYahooDailyOhlcv(symbol: string): Promise<OhlcvPoint[]> {
     const points: OhlcvPoint[] = [];
 
     for (let i = 0; i < length; i += 1) {
+      const timestamp = timestamps[i];
       const high = highs[i];
       const low = lows[i];
       const close = closes[i];
       const volume = volumes[i];
 
       if (
+        (Number.isFinite(timestamp) &&
+          isIncompleteCurrentNyDailyBar(Number(timestamp))) ||
         !Number.isFinite(high) ||
         !Number.isFinite(low) ||
         !Number.isFinite(close) ||
@@ -988,6 +1050,7 @@ async function fetchNasdaqDailyOhlcv(symbol: string): Promise<OhlcvPoint[]> {
   const rows = await fetchNasdaqHistoryRows(symbol);
 
   return rows
+    .filter((row) => !isIncompleteCurrentNasdaqDailyRow(row))
     .map((row) => ({
       high: parseNasdaqNumber(row.high ?? ""),
       low: parseNasdaqNumber(row.low ?? ""),
@@ -1119,6 +1182,7 @@ export async function fetchAverageVolume90d(
 
   const rows = await fetchNasdaqHistoryRows(symbol);
   const volumes = rows
+    .filter((row) => !isIncompleteCurrentNasdaqDailyRow(row))
     .map((row) => parseNasdaqNumber(row.volume ?? ""))
     .filter((volume) => Number.isFinite(volume));
 
@@ -1154,9 +1218,17 @@ export async function fetchAverageVolume7d(
 
       if (response.ok) {
         const json = (await response.json()) as YahooChartResponse;
-        const volumes = (
-          json.chart?.result?.[0]?.indicators?.quote?.[0]?.volume ?? []
-        ).filter((value): value is number => Number.isFinite(value));
+        const result = json.chart?.result?.[0];
+        const timestamps = result?.timestamp ?? [];
+        const rawVolumes = result?.indicators?.quote?.[0]?.volume ?? [];
+        const volumes = rawVolumes.filter((value, index): value is number => {
+          const timestamp = timestamps[index];
+          return (
+            Number.isFinite(value) &&
+            (!Number.isFinite(timestamp) ||
+              !isIncompleteCurrentNyDailyBar(Number(timestamp)))
+          );
+        });
         const recent = volumes.slice(-7);
 
         if (recent.length > 0) {
@@ -1173,6 +1245,7 @@ export async function fetchAverageVolume7d(
 
   const rows = await fetchNasdaqHistoryRows(symbol);
   const volumes = rows
+    .filter((row) => !isIncompleteCurrentNasdaqDailyRow(row))
     .map((row) => parseNasdaqNumber(row.volume ?? ""))
     .filter((volume) => Number.isFinite(volume));
 

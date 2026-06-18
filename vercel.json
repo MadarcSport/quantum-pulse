@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/stocks/indicator-snapshots/capture",
+      "schedule": "15 22 * * 1-5"
+    }
+  ]
+}

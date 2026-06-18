@@ -61,5 +61,12 @@
     "logoUrl": "https://s3-symbol-logo.tradingview.com/photronics--big.svg",
     "enabled": true,
     "showChart": true
+  },
+  {
+    "symbol": "QNT",
+    "name": "Quantinuum Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/quantinuum--big.svg",
+    "enabled": true,
+    "showChart": true
   }
 ]
