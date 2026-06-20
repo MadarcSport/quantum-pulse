@@ -1,6 +1,8 @@
+import { EbookBookPreview } from "./ebook-book-preview";
+
 export default function EbookPage() {
   return (
-    <main style={{ padding: "48px 24px", maxWidth: 960, margin: "0 auto" }}>
+    <main style={{ padding: "48px 24px", maxWidth: 1180, margin: "0 auto" }}>
       <h1
         style={{
           fontSize: "clamp(2rem, 5vw, 3rem)",
@@ -20,6 +22,7 @@ export default function EbookPage() {
       >
         Welcome to the Ebook page.
       </p>
+      <EbookBookPreview />
     </main>
   );
 }
