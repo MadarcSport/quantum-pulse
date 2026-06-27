@@ -12,6 +12,8 @@ import {
 import { DoubleSide, Group, SRGBColorSpace, TextureLoader } from "three";
 import styles from "./ebook-book-preview.module.css";
 
+const EBOOK_COVER_URL =
+  "https://res.cloudinary.com/db7i9febj/image/upload/v1781964036/bookCov001_wkq1dz.png";
 const PAGE_COUNT = 10;
 const BOOK_WIDTH = 1.4;
 const BOOK_HEIGHT = 2.0;
@@ -19,8 +21,8 @@ const COVER_THICKNESS = 0.04;
 const PAGE_THICKNESS = 0.002;
 const SPINE_WIDTH = 0.1;
 const SPINE_DEPTH = 0.1;
-const PAGE_WIDTH = BOOK_WIDTH - 0.08;
-const PAGE_HEIGHT = BOOK_HEIGHT - 0.12;
+const PAGE_WIDTH = BOOK_WIDTH * 1.1;
+const PAGE_HEIGHT = BOOK_HEIGHT * 1.01;
 const PAGE_GUTTER = 0.012;
 
 const FRONT_COVER_ROTATION = -0.1;
@@ -33,7 +35,7 @@ const LAST_UNTURNED_PAGE_ROTATION = -0.08;
 // pageTextures: ["/ebook/page-01.png", "/ebook/page-02.png", ...]
 const bookTextureSources = {
   cover: {
-    front: "",
+    front: EBOOK_COVER_URL,
     back: "",
     spine: "",
   },
@@ -109,6 +111,23 @@ function LoadedTextureMaterial({
       metalness={metalness}
       side={DoubleSide}
     />
+  );
+}
+
+function CoverImagePlane({ src, x }: { src?: string; x: number }) {
+  if (!src) return null;
+
+  return (
+    <mesh
+      name="frontCoverImage"
+      position={[x, 0, -COVER_THICKNESS / 2 - 0.002]}
+      rotation={[0, Math.PI, 0]}
+      castShadow
+      receiveShadow
+    >
+      <planeGeometry args={[BOOK_WIDTH * 0.96, BOOK_HEIGHT * 0.96, 1, 1]} />
+      <TexturedMaterial src={src} color="#ffffff" roughness={0.5} />
+    </mesh>
   );
 }
 
@@ -188,33 +207,33 @@ const BookModel = forwardRef<BookModelApi, BookModelProps>(function BookModel(
           <group
             ref={frontCoverRef}
             name="frontCoverPivot"
-            position={[SPINE_WIDTH / 2, 0, 0]}
-            rotation={[0, FRONT_COVER_ROTATION, 0]}
+            position={[-SPINE_WIDTH / 2, 0, 0]}
+            rotation={[0, BACK_COVER_ROTATION, 0]}
           >
             <mesh
               name="frontCover"
-              position={[BOOK_WIDTH / 2, 0, 0]}
+              position={[-BOOK_WIDTH / 2, 0, 0]}
               castShadow
               receiveShadow
             >
               <boxGeometry args={[BOOK_WIDTH, BOOK_HEIGHT, COVER_THICKNESS]} />
-              <TexturedMaterial
-                src={coverTextureState.front}
-                color="#2563eb"
-                roughness={0.46}
-              />
+              <TexturedMaterial src="" color="#0e183c" roughness={0.46} />
             </mesh>
+            <CoverImagePlane
+              src={coverTextureState.front}
+              x={-BOOK_WIDTH / 2}
+            />
           </group>
 
           <group
             ref={backCoverRef}
             name="backCoverPivot"
-            position={[-SPINE_WIDTH / 2, 0, 0]}
-            rotation={[0, BACK_COVER_ROTATION, 0]}
+            position={[SPINE_WIDTH / 2, 0, 0]}
+            rotation={[0, FRONT_COVER_ROTATION, 0]}
           >
             <mesh
               name="backCover"
-              position={[-BOOK_WIDTH / 2, 0, 0]}
+              position={[BOOK_WIDTH / 2, 0, 0]}
               castShadow
               receiveShadow
             >
@@ -279,10 +298,7 @@ function PreviewTable() {
         <strong>Texture slots ready:</strong> front cover, back cover, spine,
         and 10 page textures.
       </div>
-      <div>
-        Put your PNG/JPG paths in <code>bookTextureSources</code> when they are
-        ready.
-      </div>
+      <div>The Cloudinary cover is now mapped onto the front cover plane.</div>
     </div>
   );
 }
@@ -303,7 +319,7 @@ export function EbookBookPreview() {
 
       <div className={styles.canvasWrap}>
         <Canvas
-          camera={{ position: [3.8, 3.1, 5.2], fov: 40 }}
+          camera={{ position: [4, 3.1, 5.2], fov: 40 }}
           shadows
           dpr={[1, 2]}
           className={styles.canvas}
