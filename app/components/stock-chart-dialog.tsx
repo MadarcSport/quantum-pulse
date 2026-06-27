@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ChartData } from "../lib/stock-chart-data";
 import { StockChart } from "./stock-chart";
+import { StockVolumeTrendChart } from "./stock-volume-trend-chart";
 
 type StockChartDialogProps = {
   symbol: string;
@@ -261,6 +262,10 @@ export function StockChartDialog({ symbol, name }: StockChartDialogProps) {
         data={data.ranges}
         changeReference={data.changeReference}
         showHeading={false}
+        theme={isClearMode ? "clear" : "dark"}
+      />
+      <StockVolumeTrendChart
+        symbol={symbol}
         theme={isClearMode ? "clear" : "dark"}
       />
     </div>

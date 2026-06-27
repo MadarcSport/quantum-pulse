@@ -45,15 +45,43 @@ type NasdaqHistoricalResponse = {
   };
 };
 
+const FETCH_TIMEOUT_MS = 3500;
+const YAHOO_HEADERS: HeadersInit = {
+  "user-agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+  accept: "application/json, text/plain, */*",
+  "accept-language": "en-US,en;q=0.9",
+  referer: "https://finance.yahoo.com/",
+  origin: "https://finance.yahoo.com",
+};
+
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function fetchYahooHistory(
   symbol: string,
   range: "1y",
 ): Promise<ChartPoint[]> {
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://query1.finance.yahoo.com/v8/finance/chart/${symbol.toUpperCase()}?range=${range}&interval=1d&includePrePost=false&events=div%2Csplits`,
       {
-        next: { revalidate: 60 },
+        headers: YAHOO_HEADERS,
+        cache: "no-store",
       },
     );
 
@@ -134,12 +162,12 @@ async function fetchNasdaqHistory(symbol: string): Promise<ChartPoint[]> {
     const fromDate = oneYearAgo.toISOString().slice(0, 10);
     const url = `https://api.nasdaq.com/api/quote/${symbol.toUpperCase()}/historical?assetclass=stocks&fromdate=${fromDate}&todate=${toDate}&limit=365`;
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       headers: {
         "user-agent": "Mozilla/5.0",
         accept: "application/json",
       },
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
 
     if (!response.ok) {
