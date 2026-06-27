@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ChartData } from "../lib/stock-chart-data";
 import { StockChart } from "./stock-chart";
+import { StockCmfTrendChart } from "./stock-cmf-trend-chart";
 import { StockVolumeTrendChart } from "./stock-volume-trend-chart";
 
 type StockChartDialogProps = {
@@ -133,8 +134,8 @@ export function StockChartDialog({ symbol, name }: StockChartDialogProps) {
   }
 
   return (
-    <div style={{ display: "grid", gap: 10 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 30 }}>
+    <div style={{ display: "grid", gap: 30 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 25 }}>
         <p
           style={{
             margin: 0,
@@ -265,6 +266,10 @@ export function StockChartDialog({ symbol, name }: StockChartDialogProps) {
         theme={isClearMode ? "clear" : "dark"}
       />
       <StockVolumeTrendChart
+        symbol={symbol}
+        theme={isClearMode ? "clear" : "dark"}
+      />
+      <StockCmfTrendChart
         symbol={symbol}
         theme={isClearMode ? "clear" : "dark"}
       />
