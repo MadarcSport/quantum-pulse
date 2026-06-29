@@ -4,6 +4,7 @@ import React, { useState, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import Scene from "./Scene";
 import * as THREE from "three";
+import { Center, Bounds } from "@react-three/drei";
 
 export default function CanvaApp({ style, canvasStyle }) {
   const [topGroupOpen, setTopGroupOpen] = useState(false);
@@ -15,7 +16,7 @@ export default function CanvaApp({ style, canvasStyle }) {
 
     setTopGroupRotation((current) => current + direction * (Math.PI / 2));
   };
-
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   return (
     <div
       style={{
@@ -34,25 +35,26 @@ export default function CanvaApp({ style, canvasStyle }) {
         style={{
           position: "relative",
           width: "80vw",
-          height: "70vh",
+          // Fix: Make it a compact 240px landscape bar on mobile, and 70vh on desktop
+          height: isMobile ? "190px" : "70vh",
           ...canvasStyle,
         }}
       >
         <Canvas
           shadows
-          // camera={{ position: [0.1, 12, 25], fov: 18 }}
-          camera={{ position: [-1.5, 12, 25], fov: 18 }}
+          camera={{
+            position: isMobile ? [0, 15, 30] : [-1.5, 12, 25],
+            fov: isMobile ? 18 : 18,
+          }}
           gl={{
             toneMapping: THREE.ACESFilmicToneMapping,
-            // toneMapping: THREE.AgXToneMapping,
-            // toneMapping: THREE.CineonToneMapping,
             toneMappingExposure: 0.48,
           }}
           style={{
             background: "#060a1a",
             borderRadius: "8px",
             display: "block",
-            height: "100%",
+            height: "100%", // Now correctly fills the container div above
             width: "100%",
           }}
         >
