@@ -1,4 +1,5 @@
-import { HeroSection } from "./components/hero-section";
+import { CanvaApp } from "./canva/index";
+// import { BoardCanvas } from "./BoardCanvas";
 import { MoreStocksButton } from "./components/more-stocks-button";
 import { NewsPreviewSection } from "./components/news-preview-section";
 import { StockSnapshotSection } from "./components/stock-snapshot-section";
@@ -10,6 +11,7 @@ import {
 } from "./lib/stock-quote";
 import { saveStockIndicatorSnapshot } from "./lib/stock-indicator-snapshots";
 import { getEnabledStocks } from "./lib/stocks-config";
+// import { HeroSection2 } from "./components/hero-section-2";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -62,7 +64,7 @@ export default async function Home() {
           gap: 28,
         }}
       >
-        <HeroSection />
+        <CanvaApp />
 
         {previewStocksWithQuotes.length > 0 ? (
           previewStocksWithQuotes.map((stock) => (
