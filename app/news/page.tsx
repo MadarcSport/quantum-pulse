@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getAllArticles } from "@/app/lib/news";
+import { HeroSection3 } from "../components/hero-section-3";
 import styles from "./page.module.css";
 
 export default async function NewsPage() {
@@ -9,6 +10,8 @@ export default async function NewsPage() {
   return (
     <main className={styles.pageRoot}>
       <section className={styles.pageShell}>
+        <HeroSection3 />
+
         <header className={styles.pageHeader}>
           <div className={styles.bannerWrap}>
             <Image

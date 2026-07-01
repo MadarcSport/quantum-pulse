@@ -1,15 +1,22 @@
 "use client";
 
 import { OrbitControls } from "@react-three/drei";
-import { Canvas, useLoader } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import {
   forwardRef,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { DoubleSide, Group, SRGBColorSpace, TextureLoader } from "three";
+import {
+  DoubleSide,
+  Group,
+  SRGBColorSpace,
+  Texture,
+  TextureLoader,
+} from "three";
 import styles from "./ebook-book-preview.module.css";
 
 const EBOOK_COVER_URL =
@@ -99,13 +106,36 @@ function LoadedTextureMaterial({
   roughness = 0.72,
   metalness = 0.02,
 }: Required<MaterialSlotProps>) {
-  const texture = useLoader(TextureLoader, src);
-  texture.colorSpace = SRGBColorSpace;
-  texture.needsUpdate = true;
+  const [texture, setTexture] = useState<Texture | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loader = new TextureLoader();
+
+    loader.load(
+      src,
+      (loadedTexture) => {
+        if (!isMounted) return;
+        loadedTexture.colorSpace = SRGBColorSpace;
+        loadedTexture.needsUpdate = true;
+        setTexture(loadedTexture);
+      },
+      undefined,
+      () => {
+        if (!isMounted) return;
+        // Fail gracefully: keep rendering without a map instead of crashing page.
+        setTexture(null);
+      },
+    );
+
+    return () => {
+      isMounted = false;
+    };
+  }, [src]);
 
   return (
     <meshStandardMaterial
-      map={texture}
+      map={texture ?? undefined}
       color={color}
       roughness={roughness}
       metalness={metalness}

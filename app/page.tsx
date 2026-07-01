@@ -1,4 +1,4 @@
-import { CanvaApp } from "./canva/index";
+// import { CanvaApp } from "./canva/index";
 // import { BoardCanvas } from "./BoardCanvas";
 import { MoreStocksButton } from "./components/more-stocks-button";
 import { NewsPreviewSection } from "./components/news-preview-section";
@@ -11,7 +11,7 @@ import {
 } from "./lib/stock-quote";
 import { saveStockIndicatorSnapshot } from "./lib/stock-indicator-snapshots";
 import { getEnabledStocks } from "./lib/stocks-config";
-// import { HeroSection2 } from "./components/hero-section-2";
+import { HeroSection3 } from "./components/hero-section-3";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -64,7 +64,8 @@ export default async function Home() {
           gap: 28,
         }}
       >
-        <CanvaApp />
+        {/* <CanvaApp /> */}
+        <HeroSection3 />
 
         {previewStocksWithQuotes.length > 0 ? (
           previewStocksWithQuotes.map((stock) => (

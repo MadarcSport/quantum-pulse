@@ -3,9 +3,16 @@ import { useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import Lightroom3, { HDR_INTENSITY } from "./Lightroom3";
-import { BoardC7 } from "./BoardC7";
+import { BoardC7Menu } from "./BoardC7Menu";
 
-export default function Scene({ topGroupOpen, topGroupRotation }) {
+export default function Scene2({
+  topGroupOpen,
+  topGroupRotation,
+  onHomeClick,
+  onStocksClick,
+  onNewsClick,
+  onEbookClick,
+}) {
   const group = useRef();
   const modelRef = useRef();
   const centeredRef = useRef(false);
@@ -114,10 +121,14 @@ export default function Scene({ topGroupOpen, topGroupRotation }) {
       <Lightroom3 />
 
       <group ref={group} position={[0, 0, 0]} scale={[1, 1, 1]}>
-        <BoardC7
+        <BoardC7Menu
           ref={modelRef}
           topGroupOpen={topGroupOpen}
           topGroupRotation={topGroupRotation}
+          onHomeClick={onHomeClick}
+          onStocksClick={onStocksClick}
+          onNewsClick={onNewsClick}
+          onEbookClick={onEbookClick}
         />
       </group>
 

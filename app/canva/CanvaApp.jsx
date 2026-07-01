@@ -4,7 +4,6 @@ import React, { useState, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import Scene from "./Scene";
 import * as THREE from "three";
-import { Center, Bounds } from "@react-three/drei";
 
 export default function CanvaApp({ style, canvasStyle }) {
   const [topGroupOpen, setTopGroupOpen] = useState(false);
@@ -34,16 +33,18 @@ export default function CanvaApp({ style, canvasStyle }) {
         }}
         style={{
           position: "relative",
+
           width: "80vw",
-          // Fix: Make it a compact 240px landscape bar on mobile, and 70vh on desktop
-          height: isMobile ? "190px" : "70vh",
+          height: "70vh",
+
           ...canvasStyle,
         }}
       >
         <Canvas
           shadows
+          // resize={{ scroll: true, debounce: { scroll: 50, resize: 0 } }}
           camera={{
-            position: isMobile ? [0, 15, 30] : [-1.5, 12, 25],
+            position: isMobile ? [-1.5, 12, 25] : [-1.5, 10.5, 22],
             fov: isMobile ? 18 : 18,
           }}
           gl={{

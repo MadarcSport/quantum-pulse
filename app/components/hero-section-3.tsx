@@ -1,23 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import CanvaApp from "../canva";
+import CanvaApp2 from "../canva/CanvaApp2";
 
-export function HeroSection2() {
+export function HeroSection3() {
   const titleRef = useRef<HTMLHeadingElement>(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const updateViewport = () => setIsMobile(mediaQuery.matches);
-
-    updateViewport();
-    mediaQuery.addEventListener("change", updateViewport);
-
-    return () => mediaQuery.removeEventListener("change", updateViewport);
-  }, []);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -62,14 +51,12 @@ export function HeroSection2() {
           background: "rgba(15, 23, 42, 0.78)",
         }}
       >
-        <CanvaApp
+        <CanvaApp2
           style={{ width: "100%" }}
           canvasStyle={{
             width: "100%",
-            minHeight: isMobile ? 220 : 160,
-            height: isMobile
-              ? "clamp(220px, 58vw, 340px)"
-              : "clamp(160px, 22vw, 520px)",
+            minHeight: 240,
+            height: "clamp(240px, 32vw, 360px)",
           }}
         />
       </div>

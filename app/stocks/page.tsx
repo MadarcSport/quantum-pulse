@@ -1,4 +1,4 @@
-import { HeroSection2 } from "../components/hero-section-2";
+import { HeroSection3 } from "../components/hero-section-3";
 import { StocksPageClient } from "./stocks-page-client";
 import {
   fetchAverageVolume7d,
@@ -73,7 +73,7 @@ export default async function StocksPage() {
           gap: 28,
         }}
       >
-        <HeroSection2 />
+        <HeroSection3 />
 
         {stocksForClient.length > 0 ? (
           <StocksPageClient stocks={stocksForClient} />
