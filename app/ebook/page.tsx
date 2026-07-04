@@ -15,7 +15,7 @@ export default function EbookPage() {
           margin: 0,
         }}
       >
-        Ebook & Ressource.
+        Ebook & Ressources ...
       </h1>
       <p
         style={{
