@@ -2,10 +2,15 @@ import React, { useRef, useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import Lightroom3, { HDR_INTENSITY } from "./Lightroom3";
+import Lightroom3, { getHdrMaterialIntensity } from "./Lightroom3";
+import { DEFAULT_HDR_PROFILE_ID } from "./hdrProfiles";
 import { BoardC7 } from "./BoardC7";
 
-export default function Scene({ topGroupOpen, topGroupRotation }) {
+export default function Scene({
+  topGroupOpen,
+  topGroupRotation,
+  profileId = DEFAULT_HDR_PROFILE_ID,
+}) {
   const group = useRef();
   const modelRef = useRef();
   const centeredRef = useRef(false);
@@ -94,7 +99,7 @@ export default function Scene({ topGroupOpen, topGroupRotation }) {
               }
 
               if ("envMapIntensity" in mat) {
-                mat.envMapIntensity = HDR_INTENSITY;
+                mat.envMapIntensity = getHdrMaterialIntensity(profileId);
               }
 
               mat.needsUpdate = true;
@@ -107,11 +112,11 @@ export default function Scene({ topGroupOpen, topGroupRotation }) {
         }
       });
     }
-  }, []);
+  }, [profileId]);
 
   return (
     <>
-      <Lightroom3 />
+      <Lightroom3 profileId={profileId} />
 
       <group ref={group} position={[0, 0, 0]} scale={[1, 1, 1]}>
         <BoardC7

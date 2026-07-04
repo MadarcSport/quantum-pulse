@@ -20,7 +20,7 @@ import { createIronMaterial } from "./materials/ironMaterial";
 import { createBlackPlasticMaterial } from "./materials/blackPlasticMaterial";
 import { FloatingSteam } from "./FloatingSteam"; // Import your new steam component
 
-const BOARD_C7_URL = new URL("./assets/boardC7.glb", import.meta.url).href;
+const BOARD_C7_URL = "/boardC7.glb";
 
 export const BoardC7 = React.forwardRef(function BoardC7(
   { topGroupOpen = false, topGroupRotation = 0, ...props },

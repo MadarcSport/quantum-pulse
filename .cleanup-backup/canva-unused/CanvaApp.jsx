@@ -3,6 +3,7 @@
 import React, { useState, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import Scene from "./Scene";
+import CanvasErrorBoundary from "./CanvasErrorBoundary";
 import * as THREE from "three";
 
 export default function CanvaApp({ style, canvasStyle }) {
@@ -40,33 +41,35 @@ export default function CanvaApp({ style, canvasStyle }) {
           ...canvasStyle,
         }}
       >
-        <Canvas
-          shadows
-          // resize={{ scroll: true, debounce: { scroll: 50, resize: 0 } }}
-          camera={{
-            position: isMobile ? [-1.5, 12, 25] : [-1.5, 10.5, 22],
-            fov: isMobile ? 18 : 18,
-          }}
-          gl={{
-            toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 0.48,
-          }}
-          style={{
-            background: "#060a1a",
-            borderRadius: "8px",
-            display: "block",
-            height: "100%", // Now correctly fills the container div above
-            width: "100%",
-          }}
-        >
-          <Suspense fallback={null}>
-            <Scene
-              topGroupOpen={topGroupOpen}
-              topGroupRotation={topGroupRotation}
-              onNewsTextClick={() => setShowTextPopup(true)}
-            />
-          </Suspense>
-        </Canvas>
+        <CanvasErrorBoundary>
+          <Canvas
+            shadows
+            // resize={{ scroll: true, debounce: { scroll: 50, resize: 0 } }}
+            camera={{
+              position: isMobile ? [-1.5, 12, 25] : [-1.5, 10.5, 22],
+              fov: isMobile ? 18 : 18,
+            }}
+            gl={{
+              toneMapping: THREE.ACESFilmicToneMapping,
+              toneMappingExposure: 0.48,
+            }}
+            style={{
+              background: "#060a1a",
+              borderRadius: "8px",
+              display: "block",
+              height: "100%", // Now correctly fills the container div above
+              width: "100%",
+            }}
+          >
+            <Suspense fallback={null}>
+              <Scene
+                topGroupOpen={topGroupOpen}
+                topGroupRotation={topGroupRotation}
+                onNewsTextClick={() => setShowTextPopup(true)}
+              />
+            </Suspense>
+          </Canvas>
+        </CanvasErrorBoundary>
 
         <button
           type="button"

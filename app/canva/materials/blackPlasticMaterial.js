@@ -4,7 +4,7 @@ export function createBlackPlasticMaterial(baseMaterial) {
   // Base PBR properties for a standard molded black plastic
   material.color.set("#3b3b3b"); // Deep charcoal/black, pure #000000 looks unnatural
   material.metalness = 0.94; // Plastic is strictly non-metallic
-  material.roughness = 0.28; // Medium matte finish by default
+  material.roughness = 0.18; // Medium matte finish by default
 
   material.onBeforeCompile = (shader) => {
     // 1. Inject common noise functions

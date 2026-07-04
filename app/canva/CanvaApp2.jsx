@@ -5,6 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import Scene2 from "./Scene2";
 import * as THREE from "three";
 import { useRouter, useSearchParams } from "next/navigation";
+import CanvasErrorBoundary from "./CanvasErrorBoundary";
 
 const MENU_ROTATIONS = {
   home: 0,
@@ -80,36 +81,38 @@ export default function CanvaApp2({ style, canvasStyle }) {
         }}
       >
         {isViewportReady ? (
-          <Canvas
-            shadows
-            // resize={{ scroll: true, debounce: { scroll: 50, resize: 0 } }}
-            camera={{
-              position: isMobile ? [-1.5, 10, 19] : [-1.5, 10.5, 22],
-              fov: 18,
-            }}
-            gl={{
-              toneMapping: THREE.ACESFilmicToneMapping,
-              toneMappingExposure: 0.48,
-            }}
-            style={{
-              background: "#060a1a",
-              borderRadius: "8px",
-              display: "block",
-              height: "100%",
-              width: "100%",
-            }}
-          >
-            <Suspense fallback={null}>
-              <Scene2
-                topGroupOpen={topGroupOpen}
-                topGroupRotation={topGroupRotation}
-                onHomeClick={() => goToMenuRoute("/", "home")}
-                onStocksClick={() => goToMenuRoute("/stocks", "stocks")}
-                onNewsClick={() => goToMenuRoute("/news", "news")}
-                onEbookClick={() => goToMenuRoute("/ebook", "ebook")}
-              />
-            </Suspense>
-          </Canvas>
+          <CanvasErrorBoundary>
+            <Canvas
+              shadows
+              // resize={{ scroll: true, debounce: { scroll: 50, resize: 0 } }}
+              camera={{
+                position: isMobile ? [-1.5, 10, 19] : [-1.5, 10.5, 22],
+                fov: 18,
+              }}
+              gl={{
+                toneMapping: THREE.ACESFilmicToneMapping,
+                toneMappingExposure: 0.48,
+              }}
+              style={{
+                background: "#060a1a",
+                borderRadius: "8px",
+                display: "block",
+                height: "100%",
+                width: "100%",
+              }}
+            >
+              <Suspense fallback={null}>
+                <Scene2
+                  topGroupOpen={topGroupOpen}
+                  topGroupRotation={topGroupRotation}
+                  onHomeClick={() => goToMenuRoute("/", "home")}
+                  onStocksClick={() => goToMenuRoute("/stocks", "stocks")}
+                  onNewsClick={() => goToMenuRoute("/news", "news")}
+                  onEbookClick={() => goToMenuRoute("/ebook", "ebook")}
+                />
+              </Suspense>
+            </Canvas>
+          </CanvasErrorBoundary>
         ) : (
           <div
             style={{
