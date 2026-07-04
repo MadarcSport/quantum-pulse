@@ -41,7 +41,12 @@ export function HeroSection3() {
   }, []);
 
   return (
-    <>
+    <section
+      style={{
+        display: "grid",
+        gap: 28,
+      }}
+    >
       <div
         style={{
           overflow: "hidden",
@@ -99,6 +104,6 @@ export function HeroSection3() {
           development, or applications.
         </p>
       </div>
-    </>
+    </section>
   );
 }

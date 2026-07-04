@@ -4,7 +4,7 @@ import React, { useState, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import Scene2 from "./Scene2";
 import * as THREE from "three";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CanvasErrorBoundary from "./CanvasErrorBoundary";
 
 const MENU_ROTATIONS = {
@@ -16,6 +16,7 @@ const MENU_ROTATIONS = {
 
 export default function CanvaApp2({ style, canvasStyle }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [topGroupOpen, setTopGroupOpen] = useState(false);
   const [topGroupRotation, setTopGroupRotation] = useState(0);
@@ -23,7 +24,11 @@ export default function CanvaApp2({ style, canvasStyle }) {
 
   React.useEffect(() => {
     const menu = searchParams.get("menu");
-    if (!menu || !(menu in MENU_ROTATIONS)) return;
+    if (!menu || !(menu in MENU_ROTATIONS)) {
+      setTopGroupOpen(false);
+      setTopGroupRotation(0);
+      return;
+    }
 
     setTopGroupOpen(true);
     setTopGroupRotation(MENU_ROTATIONS[menu]);
@@ -60,6 +65,9 @@ export default function CanvaApp2({ style, canvasStyle }) {
   const toggleButtonPadding = isMobile ? "8px 16px" : "10px 22px";
 
   const isViewportReady = isMobile !== null;
+  const cameraPosition = [-1.5, 10.5, 22];
+  const cameraTarget = [0, 4, 0];
+  const cameraResetToken = `${pathname}?${searchParams.toString()}`;
 
   return (
     <div
@@ -83,10 +91,11 @@ export default function CanvaApp2({ style, canvasStyle }) {
         {isViewportReady ? (
           <CanvasErrorBoundary>
             <Canvas
+              key={`hero-canvas-${pathname}`}
               shadows
               // resize={{ scroll: true, debounce: { scroll: 50, resize: 0 } }}
               camera={{
-                position: isMobile ? [-1.5, 10, 19] : [-1.5, 10.5, 22],
+                position: cameraPosition,
                 fov: 18,
               }}
               gl={{
@@ -105,6 +114,9 @@ export default function CanvaApp2({ style, canvasStyle }) {
                 <Scene2
                   topGroupOpen={topGroupOpen}
                   topGroupRotation={topGroupRotation}
+                  cameraPosition={cameraPosition}
+                  cameraTarget={cameraTarget}
+                  cameraResetToken={cameraResetToken}
                   onHomeClick={() => goToMenuRoute("/", "home")}
                   onStocksClick={() => goToMenuRoute("/stocks", "stocks")}
                   onNewsClick={() => goToMenuRoute("/news", "news")}

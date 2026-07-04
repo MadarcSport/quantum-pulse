@@ -6,9 +6,45 @@ import Lightroom3, { getHdrMaterialIntensity } from "./Lightroom3";
 import { DEFAULT_HDR_PROFILE_ID } from "./hdrProfiles";
 import { BoardC7Menu } from "./BoardC7Menu";
 
+let cachedStableModelCenter = null;
+
+function computeStableModelCenter(root) {
+  const stableBox = new THREE.Box3();
+  const meshBox = new THREE.Box3();
+  let hasStableMesh = false;
+
+  root.updateWorldMatrix(true, true);
+
+  root.traverse((child) => {
+    if (!child?.isMesh) return;
+    if (child.isInstancedMesh) return;
+    if (!child.geometry) return;
+
+    if (!child.geometry.boundingBox) {
+      child.geometry.computeBoundingBox();
+    }
+
+    if (!child.geometry.boundingBox) return;
+
+    meshBox.copy(child.geometry.boundingBox);
+    meshBox.applyMatrix4(child.matrixWorld);
+    stableBox.union(meshBox);
+    hasStableMesh = true;
+  });
+
+  if (!hasStableMesh) {
+    return new THREE.Vector3(0, 0, 0);
+  }
+
+  return stableBox.getCenter(new THREE.Vector3());
+}
+
 export default function Scene2({
   topGroupOpen,
   topGroupRotation,
+  cameraPosition = [-1.5, 10.5, 22],
+  cameraTarget = [0, 4, 0],
+  cameraResetToken,
   onHomeClick,
   onStocksClick,
   onNewsClick,
@@ -17,20 +53,42 @@ export default function Scene2({
 }) {
   const group = useRef();
   const modelRef = useRef();
+  const controlsRef = useRef();
   const centeredRef = useRef(false);
   const dragState = useRef({ isDragging: false, pointerId: null, lastX: 0 });
-  const { gl } = useThree();
+  const { gl, camera } = useThree();
+  const cameraDistance = Math.hypot(
+    cameraPosition[0] - cameraTarget[0],
+    cameraPosition[1] - cameraTarget[1],
+    cameraPosition[2] - cameraTarget[2],
+  );
 
   useEffect(() => {
     if (modelRef.current && !centeredRef.current) {
-      const box = new THREE.Box3().setFromObject(modelRef.current);
-      const center = box.getCenter(new THREE.Vector3());
+      const center =
+        cachedStableModelCenter ?? computeStableModelCenter(modelRef.current);
+
+      if (!cachedStableModelCenter) {
+        cachedStableModelCenter = center.clone();
+      }
+
       modelRef.current.position.x -= center.x;
       modelRef.current.position.y -= center.y;
       modelRef.current.position.z -= center.z;
       centeredRef.current = true;
     }
   }, []);
+
+  useEffect(() => {
+    camera.position.set(...cameraPosition);
+    camera.lookAt(...cameraTarget);
+    camera.updateProjectionMatrix();
+
+    if (controlsRef.current) {
+      controlsRef.current.target.set(...cameraTarget);
+      controlsRef.current.update();
+    }
+  }, [camera, cameraPosition, cameraTarget, cameraResetToken]);
 
   useEffect(() => {
     const canvas = gl.domElement;
@@ -136,12 +194,15 @@ export default function Scene2({
 
       {/* Keep camera locked; model rotation is handled by pointer dragging. */}
       <OrbitControls
+        ref={controlsRef}
         makeDefault
-        target={[0, 4, 0]}
+        target={cameraTarget}
         enableZoom={false}
         enableRotate={false}
         enablePan={false}
         enableKeys={false}
+        minDistance={cameraDistance}
+        maxDistance={cameraDistance}
       />
 
       {/* ground plane removed per user request */}

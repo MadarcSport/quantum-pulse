@@ -3,7 +3,9 @@ import { HeroSection3 } from "../components/hero-section-3";
 
 export default function EbookPage() {
   return (
-    <main style={{ padding: "48px 24px", maxWidth: 1180, margin: "0 auto" }}>
+    <main
+      style={{ padding: "32px 24px 48px", maxWidth: 1180, margin: "0 auto" }}
+    >
       <HeroSection3 />
 
       <h1
@@ -13,7 +15,7 @@ export default function EbookPage() {
           margin: 0,
         }}
       >
-        Ebook & Ressource...
+        Ebook & Ressource.
       </h1>
       <p
         style={{
