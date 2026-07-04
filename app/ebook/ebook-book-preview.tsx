@@ -21,7 +21,7 @@ import styles from "./ebook-book-preview.module.css";
 
 const EBOOK_COVER_URL =
   "https://res.cloudinary.com/db7i9febj/image/upload/v1781964036/bookCov001_wkq1dz.png";
-const PAGE_COUNT = 10;
+const PAGE_COUNT = 9;
 const BOOK_WIDTH = 1.4;
 const BOOK_HEIGHT = 2.0;
 const COVER_THICKNESS = 0.04;
@@ -123,6 +123,7 @@ function LoadedTextureMaterial({
       undefined,
       () => {
         if (!isMounted) return;
+        console.warn("Ebook cover texture failed to load:", src);
         // Fail gracefully: keep rendering without a map instead of crashing page.
         setTexture(null);
       },
@@ -141,23 +142,6 @@ function LoadedTextureMaterial({
       metalness={metalness}
       side={DoubleSide}
     />
-  );
-}
-
-function CoverImagePlane({ src, x }: { src?: string; x: number }) {
-  if (!src) return null;
-
-  return (
-    <mesh
-      name="frontCoverImage"
-      position={[x, 0, -COVER_THICKNESS / 2 - 0.002]}
-      rotation={[0, Math.PI, 0]}
-      castShadow
-      receiveShadow
-    >
-      <planeGeometry args={[BOOK_WIDTH * 0.96, BOOK_HEIGHT * 0.96, 1, 1]} />
-      <TexturedMaterial src={src} color="#ffffff" roughness={0.5} />
-    </mesh>
   );
 }
 
@@ -247,12 +231,12 @@ const BookModel = forwardRef<BookModelApi, BookModelProps>(function BookModel(
               receiveShadow
             >
               <boxGeometry args={[BOOK_WIDTH, BOOK_HEIGHT, COVER_THICKNESS]} />
-              <TexturedMaterial src="" color="#0e183c" roughness={0.46} />
+              <TexturedMaterial
+                src={coverTextureState.front}
+                color="#ffffff"
+                roughness={0.46}
+              />
             </mesh>
-            <CoverImagePlane
-              src={coverTextureState.front}
-              x={-BOOK_WIDTH / 2}
-            />
           </group>
 
           <group
