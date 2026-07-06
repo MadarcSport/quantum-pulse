@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
-const PARTICLE_COUNT = 702;
+const PARTICLE_COUNT = 701;
 
 const smokeParticleVertexShader = /* glsl */ `
   uniform float uTime;
