@@ -43,7 +43,7 @@ const ProceduralSmokeMaterial = {
   `,
 };
 
-export function FloatingSteam({
+export function FloatingSteam2({
   count = 40,
   spawnArea = [12, 2, 12],
   position = [0, 0, 0],
@@ -58,7 +58,7 @@ export function FloatingSteam({
     for (let i = 0; i < count; i++) {
       arr.push({
         x: (Math.random() - 0.5) * spawnArea[0],
-        y: Math.random() * spawnArea[1], // Start scattered upward
+        y: Math.random() * spawnArea[0.5], // Start scattered upward
         z: (Math.random() - 0.5) * spawnArea[2],
         speedY: 0.8 + Math.random() * 1.2, // Upward velocity
         speedX: (Math.random() - 0.5) * 0.4, // Sway speed
@@ -99,7 +99,7 @@ export function FloatingSteam({
       // Behavior: Fade in smoothly from spawn, expand wide, fade out completely at the top
       // This eliminates the popping look!
       const sizeProgress = Math.sin(p.life * Math.PI);
-      const currentScale = p.maxScale * (0.4 + sizeProgress * 0.6);
+      const currentScale = p.maxScale * (0.2 + sizeProgress * 0.3);
 
       dummy.position.set(p.x, p.y, p.z);
       dummy.scale.setScalar(currentScale);
@@ -116,8 +116,8 @@ export function FloatingSteam({
 
   return (
     <instancedMesh ref={meshRef} args={[null, null, count]} position={position}>
-      <planeGeometry args={[1, 1]} />
-      {/* <boxGeometry args={[1.3, 1.3, 1.3]} /> */}
+      <boxGeometry args={[10, 10, 18]} />
+      {/* <planeGeometry args={[1, 1]} /> */}
       <shaderMaterial
         ref={materialRef}
         vertexShader={ProceduralSmokeMaterial.vertexShader}

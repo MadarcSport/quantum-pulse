@@ -9,6 +9,7 @@ import { useGLTF } from "@react-three/drei";
 import { createCopperMaterial } from "./materials/copperMaterial";
 import { createElectricSweepMaterial } from "./materials/electricSweepMaterial";
 import { createElectricSweepMaterial2 } from "./materials/electricSweepMaterial2";
+import { createRingEffectMaterial } from "./materials/ringEffectMaterial";
 import {
   createGlowBlueMaterial,
   createGlowBlueOuterMaterial,
@@ -18,7 +19,9 @@ import { createHologramMaterial } from "./materials/hologramMaterial";
 import { createIronBlackMaterial } from "./materials/ironBlackMaterial";
 import { createIronMaterial } from "./materials/ironMaterial";
 import { createBlackPlasticMaterial } from "./materials/blackPlasticMaterial";
+import SmokeParticles from "./materials/SmokeParticles";
 import { FloatingSteam } from "./FloatingSteam"; // Import your new steam component
+import { FloatingSteam2 } from "./FloatingSteam2"; // Import your new steam component
 
 const BOARD_C7_URL = "/boardC7.glb";
 
@@ -39,6 +42,8 @@ export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
   const topRotationRef = React.useRef();
   const eliseRefs = React.useRef([]);
   const electricSweepShaderRef = React.useRef();
+  const electricSweepShaderRef2 = React.useRef();
+  const radarSweepShaderRef = React.useRef();
   const baseMaterial = materials["PBR.2"] ?? materials.PBR;
   const pbrMaterial = materials.PBR;
   const goldMaterial = React.useMemo(
@@ -72,10 +77,20 @@ export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
     [baseMaterial],
   );
   const electricSweepMaterial2 = React.useMemo(
-    () => createElectricSweepMaterial2(baseMaterial, electricSweepShaderRef),
+    () => createElectricSweepMaterial2(baseMaterial, electricSweepShaderRef2),
+    [baseMaterial],
+  );
+  const radarSweepMaterial = React.useMemo(
+    () =>
+      createRingEffectMaterial(
+        baseMaterial,
+        radarSweepShaderRef,
+        "chromaticRefractionFake",
+      ),
     [baseMaterial],
   );
   const floatingSteam = React.useMemo(() => <FloatingSteam />, []);
+  const floatingSteam2 = React.useMemo(() => <FloatingSteam2 />, []);
 
   const buildMenuClickProps = (handler) => ({
     onClick: (event) => {
@@ -110,6 +125,14 @@ export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
     hologramMaterial.uniforms.uTime.value = state.clock.elapsedTime;
     if (electricSweepShaderRef.current) {
       electricSweepShaderRef.current.uniforms.uSweepTime.value =
+        state.clock.elapsedTime;
+    }
+    if (electricSweepShaderRef2.current) {
+      electricSweepShaderRef2.current.uniforms.uSweepTime.value =
+        state.clock.elapsedTime;
+    }
+    if (radarSweepShaderRef.current) {
+      radarSweepShaderRef.current.uniforms.uTime.value =
         state.clock.elapsedTime;
     }
 
@@ -184,14 +207,15 @@ export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
             <mesh
               geometry={nodes.ebookText.geometry}
               material={glowBlueMaterial}
-              position={[0.49, -0.054, -2.231]}
+              position={[0.55, -0.054, -2.331]}
+              scale={1.2}
               {...ebookClickProps}
             />
             <mesh
               geometry={nodes.ebookText.geometry}
               material={glowBlueOuterMaterial}
-              position={[0.49, -0.054, -2.231]}
-              scale={1.08}
+              position={[0.55, -0.054, -2.351]}
+              scale={1.28}
               renderOrder={1}
               {...ebookClickProps}
             />
@@ -204,14 +228,17 @@ export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
             <mesh
               geometry={nodes.newsText.geometry}
               material={glowBlueMaterial}
-              position={[2.226, -0.054, 0.246]}
+              position={[2.326, -0.054, 0.346]}
+              scale={1.3} // uniform scale (20% bigger)
+              // scale={[1.2, 1, 1]}
+
               {...newsClickProps}
             />
             <mesh
               geometry={nodes.newsText.geometry}
               material={glowBlueOuterMaterial}
-              position={[2.226, -0.054, 0.246]}
-              scale={1.08}
+              position={[2.326, -0.054, 0.346]}
+              scale={1.38}
               renderOrder={1}
               {...newsClickProps}
             />
@@ -339,27 +366,48 @@ export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
         {/* 1. Your Original Circuit Mesh remains exactly where it was */}
         <mesh
           geometry={nodes.electroCircuit.geometry}
-          material={electricSweepMaterial2}
+          material={electricSweepMaterial}
           position={[-49.57, 153.945, 191.042]}
         />
 
         {/* 2. Place the Steam using matching coordinates, shifting Y up slightly */}
         <FloatingSteam
-          count={30}
+          count={25}
           spawnArea={[8, 2, 80]} // Reduced area size so it tightly hugs the CPU chip
           position={[-50.3, 154.01, 196.9]} // Matches the mesh X and Z exactly!
+          renderOrder={9}
+          frustumCulled={false}
         />
         {/* 2. Place the Steam using matching coordinates, shifting Y up slightly */}
         <FloatingSteam
-          count={30}
+          count={25}
           spawnArea={[8, 2, 8]} // Reduced area size so it tightly hugs the CPU chip
           position={[-48.1, 154.01, 196.9]} // Matches the mesh X and Z exactly!
+          renderOrder={9}
+          frustumCulled={false}
         />
-        {/* <FloatingSteam
-          count={30}
+        <FloatingSteam
+          count={25}
           spawnArea={[8, 2, 80]} // Reduced area size so it tightly hugs the CPU chip
           position={[-46.1, 154.01, 196.9]} // Matches the mesh X and Z exactly!
-        /> */}
+          renderOrder={9}
+          frustumCulled={false}
+        />
+        <FloatingSteam2
+          count={3.5}
+          spawnArea={[8, 2, 80]} // Reduced area size so it tightly hugs the CPU chip
+          position={[-56.8, 148.94, 185.1]} // Matches the mesh X and Z exactly!
+          renderOrder={11}
+          frustumCulled={false}
+        />
+        <FloatingSteam2
+          count={2.6}
+          spawnArea={[8, 2, 80]} // Reduced area size so it tightly hugs the CPU chip
+          position={[-41.8, 148.98, 192.9]} // Matches the mesh X and Z exactly!
+          renderOrder={11}
+          frustumCulled={false}
+        />
+
         <mesh
           geometry={nodes.soudureBase.geometry}
           material={ironMaterial}
@@ -373,12 +421,24 @@ export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
         <mesh
           geometry={nodes.coqueFan.geometry}
           material={blackPlasticMaterial}
-          position={[-49.185, 154.168, 191.19]}
+          position={[-49.185, 154.08, 191.19]}
         />
         <mesh
           geometry={nodes["Plane-PBR"].geometry}
           material={materials.PBR}
           position={[-49.57, 153.937, 191.042]}
+        />
+        <SmokeParticles
+          position={[-49.57, 154.08, 191.042]}
+          scale={[0.025, 0.025, 0.025]}
+          renderOrder={10}
+          frustumCulled={false}
+        />
+        <SmokeParticles
+          position={[-52.57, 154.08, 184.042]}
+          scale={[0.085, 0.001, 0.055]}
+          renderOrder={10}
+          frustumCulled={false}
         />
       </group>
     </group>

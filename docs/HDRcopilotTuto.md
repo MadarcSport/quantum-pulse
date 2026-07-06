@@ -184,3 +184,36 @@ npm run sample:hdr
 1. Generated JSON should be treated as build artifact from the script, not edited by hand.
 2. If an HDR changes, rerun sampling to refresh analysis values.
 3. Clamps in adaptive logic are intentional to keep visuals stable and predictable.
+
+just a question, if I add one more HDR in assets, how it will be integrated in
+
+It will integrate through the same pipeline in 4 small steps.
+
+1. Add file in assets
+   Example: `app/canva/assets/newstudio.hdr`
+
+2. Add it to the sampling script
+   In `sample-hdr-profiles.mjs`, add one entry in HDR_FILES:
+
+newstudio: path.join(projectRoot, "app/canva/assets/newstudio.hdr"),
+
+3. Regenerate measured analysis
+
+run:
+
+```bash
+npm run sample:hdr
+```
+
+This updates `hdrAnalysis.generated.json` with newstudio metrics.
+
+4. Register profile + URL for runtime
+   In `hdrProfiles.js`, add newstudio in HDR_PROFILE_MAP:
+   id: "newstudio"
+   label
+   assetFile: "newstudio.hdr"
+   analysis: resolveAnalysis("newstudio")
+   lighting: { ...baseline values... }
+   In Lightroom3.jsx, add URL in HDR_URLS:
+
+`newstudio: new URL("./assets/newstudio.hdr", import.meta.url).href,`

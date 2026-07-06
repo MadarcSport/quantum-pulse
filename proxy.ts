@@ -1,12 +1,22 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 const enableClerkProxy = process.env.ENABLE_CLERK_PROXY === "1";
+const hasPublishableKey = Boolean(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+);
+const enableDevClerk = process.env.ENABLE_DEV_CLERK === "1";
+const shouldUseClerk =
+  hasPublishableKey &&
+  (process.env.NODE_ENV === "production" || enableDevClerk);
 
-export default clerkMiddleware({
+const clerkProxy = clerkMiddleware({
   frontendApiProxy: {
     enabled: enableClerkProxy,
   },
 });
+
+export default shouldUseClerk ? clerkProxy : () => NextResponse.next();
 
 export const config = {
   matcher: [

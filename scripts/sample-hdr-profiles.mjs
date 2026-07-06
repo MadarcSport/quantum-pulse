@@ -12,6 +12,7 @@ const HDR_FILES = {
   rosendal: path.join(projectRoot, "app/canva/assets/rosendal.hdr"),
   studio2: path.join(projectRoot, "app/canva/assets/studio2.hdr"),
   ferndale: path.join(projectRoot, "app/canva/assets/ferndale.hdr"),
+  ferndale2: path.join(projectRoot, "app/canva/assets/ferndale2.hdr"),
 };
 
 const OUTPUT_FILE = path.join(

@@ -1,6 +1,6 @@
 import measuredAnalysis from "./hdrAnalysis.generated.json";
 
-export const DEFAULT_HDR_PROFILE_ID = "ferndale";
+export const DEFAULT_HDR_PROFILE_ID = "ferndale2";
 
 const FALLBACK_ANALYSIS = {
   moonrise: {
@@ -22,6 +22,13 @@ const FALLBACK_ANALYSIS = {
     averageLuminance: 0.7602,
     dominantColor: [0.8394, 0.898, 1],
     dynamicRange: 2.0209,
+  },
+  ferndale2: {
+    // averageLuminance: 0.7742,
+    averageLuminance: 0.7742,
+    dominantColor: [1, 0.9651, 0.9434],
+    // dynamicRange: 1.8895,
+    dynamicRange: 8.4,
   },
 };
 
@@ -135,6 +142,7 @@ export const HDR_PROFILE_MAP = {
       ambientIntensity: 2.8,
       keySpot: {
         position: [-1.8, 24, -38],
+        // position: [28, 18, 40],
         angle: Math.PI / 1.8,
         penumbra: 9.2,
         intensity: 640,
@@ -142,7 +150,7 @@ export const HDR_PROFILE_MAP = {
         decay: 2,
       },
       fillSpot: {
-        position: [0, 28, -9],
+        position: [-30, 20, -60],
         angle: Math.PI / 2,
         penumbra: 8.102,
         intensity: 965,
@@ -150,6 +158,39 @@ export const HDR_PROFILE_MAP = {
         decay: 2,
       },
       directionalIntensity: 1.2,
+    },
+  },
+  ferndale2: {
+    id: "ferndale2",
+    label: "Ferndale 2",
+    assetFile: "ferndale2.hdr",
+    analysis: resolveAnalysis("ferndale2"),
+    lighting: {
+      environmentIntensity: 0.18,
+      hemisphereSkyColor: "#ffffff",
+      hemisphereGroundColor: "#ffffff",
+      hemisphereIntensity: 10.2,
+      ambientIntensity: 2.8,
+
+      keySpot: {
+        position: [-6, 25, -90],
+        // position: [0, 45, -80],
+        angle: Math.PI / 4,
+        penumbra: 0.1,
+        intensity: 1140,
+        distance: 260,
+        decay: 2,
+      },
+      fillSpot: {
+        // position: [26, 42, -100],
+        position: [36, -3, 30],
+        angle: Math.PI / 4,
+        penumbra: 1.1222,
+        intensity: 21000,
+        distance: 360,
+        decay: 2,
+      },
+      directionalIntensity: 3.2,
     },
   },
 };

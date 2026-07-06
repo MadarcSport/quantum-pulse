@@ -7,6 +7,7 @@ const HDR_URLS = {
   rosendal: new URL("./assets/rosendal.hdr", import.meta.url).href,
   studio2: new URL("./assets/studio2.hdr", import.meta.url).href,
   ferndale: new URL("./assets/ferndale.hdr", import.meta.url).href,
+  ferndale2: new URL("./assets/ferndale2.hdr", import.meta.url).href,
 };
 
 function clamp(value, min, max) {

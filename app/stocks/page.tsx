@@ -91,7 +91,7 @@ export default async function StocksPage() {
               <code style={{ marginLeft: 6, marginRight: 6 }}>
                 enabled: true
               </code>
-              in <code>app/data/stocks.json</code>.
+              in <code>app/data/stocks.json</code>
             </p>
           </section>
         )}

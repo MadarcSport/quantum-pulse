@@ -2,25 +2,51 @@
   "moonrise": {
     "averageLuminance": 0.8339,
     "averageLuminanceRaw": 12979.5659,
-    "dominantColor": [0.8874, 0.9482, 1],
+    "dominantColor": [
+      0.8874,
+      0.9482,
+      1
+    ],
     "dynamicRange": 1.5254
   },
   "rosendal": {
     "averageLuminance": 0.8796,
     "averageLuminanceRaw": 12587.6124,
-    "dominantColor": [0.9662, 1, 0.9994],
+    "dominantColor": [
+      0.9662,
+      1,
+      0.9994
+    ],
     "dynamicRange": 1.4703
   },
   "studio2": {
     "averageLuminance": 0.8359,
     "averageLuminanceRaw": 13920.199,
-    "dominantColor": [1, 0.9798, 0.9553],
+    "dominantColor": [
+      1,
+      0.9798,
+      0.9553
+    ],
     "dynamicRange": 1.7932
   },
   "ferndale": {
     "averageLuminance": 0.7602,
     "averageLuminanceRaw": 10822.694,
-    "dominantColor": [0.8394, 0.898, 1],
+    "dominantColor": [
+      0.8394,
+      0.898,
+      1
+    ],
     "dynamicRange": 2.0209
+  },
+  "ferndale2": {
+    "averageLuminance": 0.7742,
+    "averageLuminanceRaw": 11293.562,
+    "dominantColor": [
+      1,
+      0.9651,
+      0.9434
+    ],
+    "dynamicRange": 1.8895
   }
 }
