@@ -1,5 +1,5 @@
-import React, { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import React, { useEffect, useMemo, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 const PARTICLE_COUNT = 700;
@@ -66,10 +66,20 @@ const smokeParticleFragmentShader = /* glsl */ `
   }
 `;
 
-export default function SmokeParticles({ position = [0, -95, 0], ...props }) {
+export default function SmokeParticles({
+  position = [0, -95, 0],
+  riseHeight = 95,
+  baseSize = 1.9,
+  mobileBaseSize = 1.9,
+  ...props
+}) {
   const materialRef = useRef();
+  const { size } = useThree();
+  const isMobileCanvas = size.width < 768;
+  const renderedBaseSize = isMobileCanvas ? mobileBaseSize : baseSize;
+
   const geometry = useMemo(() => {
-    const positions = new Float32Array(PARTICLE_COUNT * 30);
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
     const speeds = new Float32Array(PARTICLE_COUNT);
     const sizes = new Float32Array(PARTICLE_COUNT);
     const phases = new Float32Array(PARTICLE_COUNT);
@@ -99,18 +109,29 @@ export default function SmokeParticles({ position = [0, -95, 0], ...props }) {
     smokeGeometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
     smokeGeometry.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
     smokeGeometry.setAttribute("aSpin", new THREE.BufferAttribute(spins, 1));
+    smokeGeometry.boundingSphere = new THREE.Sphere(
+      new THREE.Vector3(0, riseHeight * 0.5, 0),
+      180,
+    );
 
     return smokeGeometry;
-  }, []);
+  }, [riseHeight]);
 
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
-      uRiseHeight: { value: 95 },
-      uBaseSize: { value: 1.9 }, //maximum size of the particles
+      uRiseHeight: { value: riseHeight },
+      uBaseSize: { value: renderedBaseSize }, //maximum size of the particles
     }),
-    [],
+    [riseHeight, renderedBaseSize],
   );
+
+  useEffect(() => {
+    if (!materialRef.current) return;
+
+    materialRef.current.uniforms.uRiseHeight.value = riseHeight;
+    materialRef.current.uniforms.uBaseSize.value = renderedBaseSize;
+  }, [riseHeight, renderedBaseSize]);
 
   useFrame(({ clock }) => {
     if (materialRef.current) {
@@ -126,8 +147,10 @@ export default function SmokeParticles({ position = [0, -95, 0], ...props }) {
         vertexShader={smokeParticleVertexShader}
         fragmentShader={smokeParticleFragmentShader}
         transparent
+        depthTest={false}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
+        precision="highp"
         toneMapped={false}
       />
     </points>
