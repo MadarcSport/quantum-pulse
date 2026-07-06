@@ -65,8 +65,10 @@ export default function CanvaApp2({ style, canvasStyle }) {
   const toggleButtonPadding = isMobile ? "8px 16px" : "10px 22px";
 
   const isViewportReady = isMobile !== null;
-  const cameraPosition = [-1.5, 10.5, 22];
-  const cameraTarget = [0, 4, 0];
+  // const cameraPosition = [-1.5, 10.5, 22];
+  const cameraPosition = isMobile ? [-1.5, 11.5, 23.7] : [-1.5, 10.5, 22];
+  // const cameraTarget = [0, 4, 0];
+  const cameraTarget = isMobile ? [0, 4.2, 0] : [0, 4, 0];
   const cameraResetToken = `${pathname}?${searchParams.toString()}`;
 
   return (

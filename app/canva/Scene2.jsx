@@ -54,6 +54,7 @@ export default function Scene2({
   const group = useRef();
   const modelRef = useRef();
   const controlsRef = useRef();
+  const [modelReadyToken, setModelReadyToken] = React.useState(0);
   const centeredRef = useRef(false);
   const dragState = useRef({ isDragging: false, pointerId: null, lastX: 0 });
   const { gl, camera } = useThree();
@@ -77,6 +78,10 @@ export default function Scene2({
       modelRef.current.position.z -= center.z;
       centeredRef.current = true;
     }
+  }, [modelReadyToken]);
+
+  const handleModelReady = React.useCallback(() => {
+    setModelReadyToken((current) => current + 1);
   }, []);
 
   useEffect(() => {
@@ -189,6 +194,7 @@ export default function Scene2({
           onStocksClick={onStocksClick}
           onNewsClick={onNewsClick}
           onEbookClick={onEbookClick}
+          onModelReady={handleModelReady}
         />
       </group>
 

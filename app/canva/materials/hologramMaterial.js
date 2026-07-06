@@ -7,14 +7,19 @@ export function createHologramMaterial() {
       uColor: { value: new THREE.Color("#c0c0c0") },
       uOpacity: { value: 0.25 },
       uScanlineDensity: { value: 60.0 },
-      uVariationStrength: { value: 0.1 },
+      uVariationStrength: { value: 0.6 }, // basic value = 0.1
       uHover: { value: 0 },
-      uGlitchStrength: { value: -0.6 },
+      uGlitchStrength: { value: -1.6 },
+      uGlowStrength: { value: 0.45 },
+      uFrequency: { value: 4.0 },
+      uDeformationStrength: { value: 0.12 },
     },
     vertexShader: /* glsl */ `
       uniform float uTime;
       uniform float uHover;
       uniform float uGlitchStrength;
+      uniform float uFrequency;
+      uniform float uDeformationStrength;
 
       varying vec2 vUv;
       varying vec3 vNormal;
@@ -35,6 +40,12 @@ export function createHologramMaterial() {
         float activeBand = step(0.72, bandNoise);
         float direction = random(vec2(band, 4.2)) * 2.0 - 1.0;
         float microWave = sin(uv.y * 95.0 + uTime * 18.0) * 0.012;
+        float deformation =
+        sin(position.x * uFrequency + uTime * 4.0) *
+        sin(position.z * uFrequency + uTime * 5.0) *
+        uDeformationStrength;
+
+transformedPosition.y += deformation;
 
         transformedPosition.y +=
           (direction * activeBand * uGlitchStrength + microWave) * uHover;
@@ -54,6 +65,7 @@ export function createHologramMaterial() {
       uniform float uOpacity;
       uniform float uScanlineDensity;
       uniform float uVariationStrength;
+      uniform float uGlowStrength;
 
       varying vec2 vUv;
       varying vec3 vNormal;
@@ -76,15 +88,16 @@ export function createHologramMaterial() {
         float noise = random(floor((vUv + uTime * 0.015) * vec2(26.0, 10.0)));
 
         float variation = mix(wave, noise, 0.28) * uVariationStrength;
-        float alpha = uOpacity + fresnel * 0.34 + scanline * 0.16 + variation;
-        alpha *= mix(0.60, 1.12, pulse);
-        alpha = clamp(alpha, 0.0, 0.88);
+        float alpha = uOpacity + fresnel * 0.34 + scanline * 0.16 + variation; //scanline * 0.16 = scanline opacity
+        alpha *= mix(0.60, 1.12, pulse); //opacity pulsing strength.
+        alpha = clamp(alpha, 0.0, 0.45); //manage the opacity a the lees opaque time
 
         vec3 color = uColor;
-        color += fresnel * vec3(0.890, 0.657, 0.0178);
-        color += scanline * vec3(0.00560, 0.375, 0.560); 
-        color += variation * vec3(0.890, 0.657, 0.0178);
-
+        color += fresnel * vec3(0.890, 0.657, 0.0178) * uGlowStrength;
+        color += scanline * vec3(0.00560, 0.375, 0.560) * uGlowStrength;
+        color += variation * vec3(0.890, 0.657, 0.0178) * uGlowStrength;
+        //color += uGlowStrength * vec3(0.0, 0.5, 1.0); 
+        // Add glow effect    
         gl_FragColor = vec4(color, alpha);
       }
     `,

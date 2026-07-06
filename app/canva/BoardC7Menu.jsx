@@ -23,21 +23,73 @@ import SmokeParticles from "./materials/SmokeParticles";
 import { FloatingSteam } from "./FloatingSteam"; // Import your new steam component
 import { FloatingSteam2 } from "./FloatingSteam2"; // Import your new steam component
 
-const BOARD_C7_URL = "/boardC7.glb";
+const BOARD_C7_FALLBACK_URL = "/boardC7.glb";
+const BOARD_C7_CPU_URL = "/boardC7cpu3.glb";
+const BOARD_C7_DEFAULT_URL =
+  process.env.NEXT_PUBLIC_BOARD_C7_MODEL === "classic"
+    ? BOARD_C7_FALLBACK_URL
+    : BOARD_C7_CPU_URL;
 
-export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
+export const BoardC7Menu = React.forwardRef(function BoardC7Menu(props, ref) {
+  const modelUrl = useSafeBoardC7ModelUrl();
+
+  if (!modelUrl) {
+    return null;
+  }
+
+  return <BoardC7MenuModel ref={ref} modelUrl={modelUrl} {...props} />;
+});
+
+function useSafeBoardC7ModelUrl() {
+  const [modelUrl, setModelUrl] = React.useState(null);
+
+  React.useEffect(() => {
+    let active = true;
+
+    async function resolveModelUrl() {
+      try {
+        const response = await fetch(BOARD_C7_DEFAULT_URL, {
+          method: "HEAD",
+          cache: "force-cache",
+        });
+
+        if (active) {
+          setModelUrl(
+            response.ok ? BOARD_C7_DEFAULT_URL : BOARD_C7_FALLBACK_URL,
+          );
+        }
+      } catch {
+        if (active) {
+          setModelUrl(BOARD_C7_FALLBACK_URL);
+        }
+      }
+    }
+
+    resolveModelUrl();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return modelUrl;
+}
+
+const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
   {
+    modelUrl,
     topGroupOpen = false,
     topGroupRotation = 0,
     onHomeClick,
     onStocksClick,
     onNewsClick,
     onEbookClick,
+    onModelReady,
     ...props
   },
   ref,
 ) {
-  const { nodes, materials } = useGLTF(BOARD_C7_URL);
+  const { nodes, materials } = useGLTF(modelUrl);
   const topGroupRef = React.useRef();
   const topRotationRef = React.useRef();
   const eliseRefs = React.useRef([]);
@@ -91,6 +143,12 @@ export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
   );
   const floatingSteam = React.useMemo(() => <FloatingSteam />, []);
   const floatingSteam2 = React.useMemo(() => <FloatingSteam2 />, []);
+
+  React.useEffect(() => {
+    if (onModelReady) {
+      onModelReady(modelUrl);
+    }
+  }, [modelUrl, onModelReady]);
 
   const buildMenuClickProps = (handler) => ({
     onClick: (event) => {
@@ -171,7 +229,7 @@ export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
           >
             <mesh
               geometry={nodes.topCPUlogo.geometry}
-              material={materials["PBR.2"]}
+              material={materials["PBR.3"]}
               position={[0, 1.66, 0]}
             />
             <mesh
@@ -181,7 +239,7 @@ export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
             />
             <mesh
               geometry={nodes.behindTextMenu.geometry}
-              material={electricSweepMaterial2}
+              material={copperMaterial}
               position={[212.253, -312.71, -384.497]}
             />
             <mesh
@@ -434,15 +492,15 @@ export const BoardC7Menu = React.forwardRef(function BoardC7Menu(
           renderOrder={10}
           frustumCulled={false}
         />
-        <SmokeParticles
+        {/* <SmokeParticles
           position={[-52.57, 154.08, 184.042]}
           scale={[0.085, 0.001, 0.055]}
           renderOrder={10}
           frustumCulled={false}
-        />
+        /> */}
       </group>
     </group>
   );
 });
 
-useGLTF.preload(BOARD_C7_URL);
+useGLTF.preload(BOARD_C7_FALLBACK_URL);

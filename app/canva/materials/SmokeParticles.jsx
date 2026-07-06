@@ -68,7 +68,7 @@ const smokeParticleFragmentShader = /* glsl */ `
 
 export default function SmokeParticles({
   position = [0, -95, 0],
-  riseHeight = 95,
+  riseHeight = 99,
   baseSize = 1.9,
   mobileBaseSize = 1.9,
   ...props
