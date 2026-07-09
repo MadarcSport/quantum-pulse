@@ -50,6 +50,7 @@ export default function Scene2({
   onNewsClick,
   onEbookClick,
   profileId = DEFAULT_HDR_PROFILE_ID,
+  isActive = true,
 }) {
   const group = useRef();
   const modelRef = useRef();
@@ -188,6 +189,7 @@ export default function Scene2({
       <group ref={group} position={[0, 0, 0]} scale={[1, 1, 1]}>
         <BoardC7Menu
           ref={modelRef}
+          isActive={isActive}
           topGroupOpen={topGroupOpen}
           topGroupRotation={topGroupRotation}
           onHomeClick={onHomeClick}

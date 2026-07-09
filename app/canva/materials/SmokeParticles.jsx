@@ -71,6 +71,7 @@ export default function SmokeParticles({
   riseHeight = 115,
   baseSize = 1.9,
   mobileBaseSize = 1.9,
+  isActive = true,
   ...props
 }) {
   const materialRef = useRef();
@@ -134,6 +135,8 @@ export default function SmokeParticles({
   }, [riseHeight, renderedBaseSize]);
 
   useFrame(({ clock }) => {
+    if (!isActive) return;
+
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = clock.getElapsedTime();
     }

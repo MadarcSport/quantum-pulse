@@ -85,6 +85,7 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
     onNewsClick,
     onEbookClick,
     onModelReady,
+    isActive = true,
     ...props
   },
   ref,
@@ -178,6 +179,10 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
   // Replace any mesh material with one of these according to your needs.
 
   useFrame((state, delta) => {
+    if (!isActive) return;
+
+    const safeDelta = Math.min(delta, 0.05);
+
     glowBlueMaterial.uniforms.uTime.value = state.clock.elapsedTime;
     glowBlueOuterMaterial.uniforms.uTime.value = state.clock.elapsedTime;
     hologramMaterial.uniforms.uTime.value = state.clock.elapsedTime;
@@ -195,14 +200,14 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
     }
 
     eliseRefs.current.forEach((elise) => {
-      if (elise) elise.rotation.y += delta * 0.82;
+      if (elise) elise.rotation.y += safeDelta * 0.82;
     });
 
     if (!topGroupRef.current || !topRotationRef.current) return;
 
     const targetY = topGroupOpen ? 1.718 : -1.518;
-    const speed = Math.min(delta * 2, 1);
-    const rotationSpeed = Math.min(delta * 4, 1);
+    const speed = Math.min(safeDelta * 2, 1);
+    const rotationSpeed = Math.min(safeDelta * 4, 1);
 
     topGroupRef.current.position.y +=
       (targetY - topGroupRef.current.position.y) * speed;
@@ -433,6 +438,7 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
 
         {/* 2. Place the Steam using matching coordinates, shifting Y up slightly */}
         <FloatingSteam
+          isActive={isActive}
           count={25}
           spawnArea={[8, 2, 80]} // Reduced area size so it tightly hugs the CPU chip
           position={[-50.3, 154.01, 196.9]} // Matches the mesh X and Z exactly!
@@ -441,6 +447,7 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
         />
         {/* 2. Place the Steam using matching coordinates, shifting Y up slightly */}
         <FloatingSteam
+          isActive={isActive}
           count={25}
           spawnArea={[8, 2, 8]} // Reduced area size so it tightly hugs the CPU chip
           position={[-48.1, 154.01, 196.9]} // Matches the mesh X and Z exactly!
@@ -448,6 +455,7 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
           frustumCulled={false}
         />
         <FloatingSteam
+          isActive={isActive}
           count={25}
           spawnArea={[8, 2, 80]} // Reduced area size so it tightly hugs the CPU chip
           position={[-46.1, 154.01, 196.9]} // Matches the mesh X and Z exactly!
@@ -455,6 +463,7 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
           frustumCulled={false}
         />
         <FloatingSteam2
+          isActive={isActive}
           count={3.5}
           spawnArea={[8, 2, 80]} // Reduced area size so it tightly hugs the CPU chip
           position={[-56.8, 148.94, 185.1]} // Matches the mesh X and Z exactly!
@@ -462,6 +471,7 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
           frustumCulled={false}
         />
         <FloatingSteam2
+          isActive={isActive}
           count={2.6}
           spawnArea={[8, 2, 80]} // Reduced area size so it tightly hugs the CPU chip
           position={[-41.8, 148.98, 192.9]} // Matches the mesh X and Z exactly!
@@ -490,6 +500,7 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
           position={[-49.57, 153.937, 191.042]}
         />
         <SmokeParticles
+          isActive={isActive}
           position={[-49.57, 154.08, 191.042]}
           scale={[0.025, 0.025, 0.025]}
           renderOrder={10}

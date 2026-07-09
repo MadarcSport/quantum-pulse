@@ -1,5 +1,6 @@
 // import { CanvaApp } from "./canva/index";
 // import { BoardCanvas } from "./BoardCanvas";
+import { Suspense } from "react";
 import { MoreStocksButton } from "./components/more-stocks-button";
 import { NewsPreviewSection } from "./components/news-preview-section";
 import { StockSnapshotSection } from "./components/stock-snapshot-section";
@@ -9,15 +10,44 @@ import {
   fetchCmfMetrics,
   fetchStockQuote,
 } from "./lib/stock-quote";
-import { saveStockIndicatorSnapshot } from "./lib/stock-indicator-snapshots";
 import { getEnabledStocks } from "./lib/stocks-config";
 import { HeroSection3 } from "./components/hero-section-3";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function Home() {
-  const enabledStocks = getEnabledStocks();
+function StockPreviewFallback() {
+  return (
+    <section
+      style={{
+        border: "1px solid rgba(148, 163, 184, 0.2)",
+        borderRadius: 16,
+        background: "rgba(15, 23, 42, 0.72)",
+        padding: 20,
+      }}
+      aria-label="Loading stock preview"
+    >
+      <p
+        style={{
+          margin: 0,
+          color: "#94a3b8",
+          fontSize: 14,
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+        }}
+      >
+        Loading stock data…
+      </p>
+    </section>
+  );
+}
+
+async function StockPreviewSections({
+  enabledStocks,
+}: {
+  enabledStocks: ReturnType<typeof getEnabledStocks>;
+}) {
   const previewStocks = enabledStocks.slice(0, 3);
   const previewStocksWithQuotes = await Promise.all(
     previewStocks.map(async (stock) => {
@@ -28,14 +58,6 @@ export default async function Home() {
         fetchCmfMetrics(stock.symbol),
       ]);
 
-      await saveStockIndicatorSnapshot({
-        symbol: stock.symbol,
-        quote,
-        avgVolume7d,
-        avgVolume90d,
-        cmfMetrics,
-      });
-
       return {
         ...stock,
         quote,
@@ -45,6 +67,59 @@ export default async function Home() {
       };
     }),
   );
+
+  if (previewStocksWithQuotes.length === 0) {
+    return (
+      <section
+        style={{
+          border: "1px solid rgba(148, 163, 184, 0.2)",
+          borderRadius: 16,
+          background: "rgba(15, 23, 42, 0.72)",
+          padding: 20,
+        }}
+      >
+        <p style={{ margin: 0, color: "#fda4af" }}>
+          No enabled stocks found. Set at least one item to
+          <code style={{ marginLeft: 6, marginRight: 6 }}>enabled: true</code>
+          in <code>app/data/stocks.json</code>.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <>
+      {previewStocksWithQuotes.map((stock) => (
+        <StockSnapshotSection
+          key={stock.symbol}
+          title={stock.symbol}
+          stockName={stock.name}
+          logoUrl={stock.logoUrl}
+          quote={stock.quote}
+          avgVolume7d={stock.avgVolume7d}
+          avgVolume90d={stock.avgVolume90d}
+          cmfMetrics={stock.cmfMetrics}
+          showChart={stock.showChart}
+        />
+      ))}
+
+      {enabledStocks.length > previewStocks.length ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <MoreStocksButton />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+export default function Home() {
+  const enabledStocks = getEnabledStocks();
 
   return (
     <main
@@ -67,50 +142,9 @@ export default async function Home() {
         {/* <CanvaApp /> */}
         <HeroSection3 />
 
-        {previewStocksWithQuotes.length > 0 ? (
-          previewStocksWithQuotes.map((stock) => (
-            <StockSnapshotSection
-              key={stock.symbol}
-              title={stock.symbol}
-              stockName={stock.name}
-              logoUrl={stock.logoUrl}
-              quote={stock.quote}
-              avgVolume7d={stock.avgVolume7d}
-              avgVolume90d={stock.avgVolume90d}
-              cmfMetrics={stock.cmfMetrics}
-              showChart={stock.showChart}
-            />
-          ))
-        ) : (
-          <section
-            style={{
-              border: "1px solid rgba(148, 163, 184, 0.2)",
-              borderRadius: 16,
-              background: "rgba(15, 23, 42, 0.72)",
-              padding: 20,
-            }}
-          >
-            <p style={{ margin: 0, color: "#fda4af" }}>
-              No enabled stocks found. Set at least one item to
-              <code style={{ marginLeft: 6, marginRight: 6 }}>
-                enabled: true
-              </code>
-              in <code>app/data/stocks.json</code>.
-            </p>
-          </section>
-        )}
-
-        {enabledStocks.length > previewStocks.length ? (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <MoreStocksButton />
-          </div>
-        ) : null}
+        <Suspense fallback={<StockPreviewFallback />}>
+          <StockPreviewSections enabledStocks={enabledStocks} />
+        </Suspense>
 
         <div style={{ marginTop: 20 }}>
           <NewsPreviewSection />

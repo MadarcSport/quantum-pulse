@@ -47,6 +47,7 @@ export function FloatingSteam({
   count = 40,
   spawnArea = [12, 2, 12],
   position = [0, 0, 0],
+  isActive = true,
 }) {
   const meshRef = useRef();
   const materialRef = useRef();
@@ -72,7 +73,10 @@ export function FloatingSteam({
   }, [count, spawnArea]);
 
   useFrame((state, delta) => {
+    if (!isActive) return;
     if (!meshRef.current) return;
+
+    const safeDelta = Math.min(delta, 0.05);
 
     // Keep the procedural noise inside the shader moving
     if (materialRef.current) {
@@ -80,7 +84,7 @@ export function FloatingSteam({
     }
 
     particles.forEach((p, i) => {
-      p.life += p.rate * delta;
+      p.life += p.rate * safeDelta;
 
       if (p.life > 1) {
         p.life = 0;
@@ -90,11 +94,11 @@ export function FloatingSteam({
       }
 
       // Physics: Float up, sway left and right like true gas
-      p.y += p.speedY * delta * 3.0;
+      p.y += p.speedY * safeDelta * 3.0;
       p.x +=
         Math.sin(state.clock.getElapsedTime() * 1.5 + p.swayOffset) *
         p.speedX *
-        delta;
+        safeDelta;
 
       // Behavior: Fade in smoothly from spawn, expand wide, fade out completely at the top
       // This eliminates the popping look!

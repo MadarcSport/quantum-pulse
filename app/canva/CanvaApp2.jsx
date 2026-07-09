@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import Scene2 from "./Scene2";
 import * as THREE from "three";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -14,13 +14,30 @@ const MENU_ROTATIONS = {
   ebook: Math.PI / 2,
 };
 
+function CanvasLoopController({ isActive }) {
+  const setFrameloop = useThree((state) => state.setFrameloop);
+  const invalidate = useThree((state) => state.invalidate);
+
+  React.useEffect(() => {
+    setFrameloop(isActive ? "always" : "demand");
+
+    if (isActive) {
+      invalidate();
+    }
+  }, [invalidate, isActive, setFrameloop]);
+
+  return null;
+}
+
 export default function CanvaApp2({ style, canvasStyle }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const canvasHostRef = React.useRef(null);
   const [topGroupOpen, setTopGroupOpen] = useState(false);
   const [topGroupRotation, setTopGroupRotation] = useState(0);
   const [isMobile, setIsMobile] = useState(null);
+  const [isCanvasVisible, setIsCanvasVisible] = useState(true);
 
   React.useEffect(() => {
     const menu = searchParams.get("menu");
@@ -42,6 +59,30 @@ export default function CanvaApp2({ style, canvasStyle }) {
     mediaQuery.addEventListener("change", updateViewport);
 
     return () => mediaQuery.removeEventListener("change", updateViewport);
+  }, []);
+
+  React.useEffect(() => {
+    const target = canvasHostRef.current;
+
+    if (!target || !("IntersectionObserver" in window)) {
+      setIsCanvasVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsCanvasVisible(entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: "120px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(target);
+
+    return () => observer.disconnect();
   }, []);
 
   const goToMenuRoute = (path, menu) => {
@@ -81,6 +122,7 @@ export default function CanvaApp2({ style, canvasStyle }) {
       }}
     >
       <div
+        ref={canvasHostRef}
         style={{
           position: "relative",
 
@@ -94,6 +136,7 @@ export default function CanvaApp2({ style, canvasStyle }) {
           <CanvasErrorBoundary>
             <Canvas
               key={`hero-canvas-${pathname}`}
+              frameloop={isCanvasVisible ? "always" : "demand"}
               shadows
               // resize={{ scroll: true, debounce: { scroll: 50, resize: 0 } }}
               camera={{
@@ -117,8 +160,10 @@ export default function CanvaApp2({ style, canvasStyle }) {
                 width: "100%",
               }}
             >
+              <CanvasLoopController isActive={isCanvasVisible} />
               <Suspense fallback={null}>
                 <Scene2
+                  isActive={isCanvasVisible}
                   topGroupOpen={topGroupOpen}
                   topGroupRotation={topGroupRotation}
                   cameraPosition={cameraPosition}
