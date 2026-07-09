@@ -24,7 +24,7 @@ import { FloatingSteam } from "./FloatingSteam"; // Import your new steam compon
 import { FloatingSteam2 } from "./FloatingSteam2"; // Import your new steam component
 
 const BOARD_C7_FALLBACK_URL = "/boardC7.glb";
-const BOARD_C7_CPU_URL = "/boardC7cpu3.glb";
+const BOARD_C7_CPU_URL = "/boardC7cpu7.glb";
 const BOARD_C7_DEFAULT_URL =
   process.env.NEXT_PUBLIC_BOARD_C7_MODEL === "classic"
     ? BOARD_C7_FALLBACK_URL

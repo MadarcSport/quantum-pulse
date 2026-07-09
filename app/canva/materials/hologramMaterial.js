@@ -41,11 +41,13 @@ export function createHologramMaterial() {
         float direction = random(vec2(band, 4.2)) * 2.0 - 1.0;
         float microWave = sin(uv.y * 95.0 + uTime * 18.0) * 0.012;
         float deformation =
-        sin(position.x * uFrequency + uTime * 4.0) *
-        sin(position.z * uFrequency + uTime * 5.0) *
-        uDeformationStrength;
+          sin(position.x * uFrequency + uTime * 2.0) *
+          sin(position.z * uFrequency + uTime * 3.0);
 
-transformedPosition.y += deformation;
+        float squeeze = abs(deformation) * uDeformationStrength * 0.8;
+
+        transformedPosition.y *= 0.91 - squeeze;
+        transformedPosition.y += deformation * uDeformationStrength;
 
         transformedPosition.y +=
           (direction * activeBand * uGlitchStrength + microWave) * uHover;
