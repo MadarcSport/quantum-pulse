@@ -24,7 +24,7 @@ import { FloatingSteam } from "./FloatingSteam"; // Import your new steam compon
 import { FloatingSteam2 } from "./FloatingSteam2"; // Import your new steam component
 
 const BOARD_C7_FALLBACK_URL = "/boardC7.glb";
-const BOARD_C7_CPU_URL = "/boardC7cpu7.glb";
+const BOARD_C7_CPU_URL = "/boardC7cpu8.glb";
 const BOARD_C7_DEFAULT_URL =
   process.env.NEXT_PUBLIC_BOARD_C7_MODEL === "classic"
     ? BOARD_C7_FALLBACK_URL
@@ -232,6 +232,7 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
               material={materials["PBR.3"]}
               position={[0, 1.66, 0]}
             />
+
             <mesh
               geometry={nodes.cpuTopStands.geometry}
               material={ironMaterial}
@@ -245,14 +246,15 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
             <mesh
               geometry={nodes.homeTExt.geometry}
               material={glowBlueMaterial}
-              position={[-2.255, -0.054, -0.401]}
+              position={[-2.255, -0.054, -0.501]}
+              scale={1.1}
               {...homeClickProps}
             />
             <mesh
               geometry={nodes.homeTExt.geometry}
               material={glowBlueOuterMaterial}
-              position={[-2.255, -0.054, -0.401]}
-              scale={1.08}
+              position={[-2.255, -0.054, -0.501]}
+              scale={1.12}
               renderOrder={1}
               {...homeClickProps}
             />
@@ -266,14 +268,14 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
               geometry={nodes.ebookText.geometry}
               material={glowBlueMaterial}
               position={[0.55, -0.054, -2.331]}
-              scale={1.2}
+              scale={1.17}
               {...ebookClickProps}
             />
             <mesh
               geometry={nodes.ebookText.geometry}
               material={glowBlueOuterMaterial}
               position={[0.55, -0.054, -2.351]}
-              scale={1.28}
+              scale={1.19}
               renderOrder={1}
               {...ebookClickProps}
             />
@@ -287,7 +289,7 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
               geometry={nodes.newsText.geometry}
               material={glowBlueMaterial}
               position={[2.326, -0.054, 0.346]}
-              scale={1.3} // uniform scale (20% bigger)
+              scale={1.18} // uniform scale (20% bigger)
               // scale={[1.2, 1, 1]}
 
               {...newsClickProps}
@@ -296,7 +298,7 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
               geometry={nodes.newsText.geometry}
               material={glowBlueOuterMaterial}
               position={[2.326, -0.054, 0.346]}
-              scale={1.38}
+              scale={1.2}
               renderOrder={1}
               {...newsClickProps}
             />
@@ -308,14 +310,15 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
             <mesh
               geometry={nodes.onStcoksText.geometry}
               material={glowBlueMaterial}
-              position={[-0.419, -0.062, 2.24]}
+              position={[-0.5, -0.062, 2.24]}
               rotation={[0, -1.571, 0]}
+              scale={1.08}
               {...stocksClickProps}
             />
             <mesh
               geometry={nodes.onStcoksText.geometry}
               material={glowBlueOuterMaterial}
-              position={[-0.419, -0.062, 2.24]}
+              position={[-0.5, -0.062, 2.24]}
               rotation={[0, -1.571, 0]}
               scale={1.08}
               renderOrder={1}

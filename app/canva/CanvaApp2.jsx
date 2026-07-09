@@ -102,7 +102,12 @@ export default function CanvaApp2({ style, canvasStyle }) {
               }}
               gl={{
                 toneMapping: THREE.ACESFilmicToneMapping,
-                toneMappingExposure: 0.48,
+                toneMappingExposure: 0.55,
+                // antialias: true,
+                // physicallyCorrectLights: true,
+
+                // toneMapping: THREE.AgXToneMapping,
+                // toneMappingExposure: 0.32,
               }}
               style={{
                 background: "#060a1a",

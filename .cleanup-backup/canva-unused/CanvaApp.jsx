@@ -46,7 +46,7 @@ export default function CanvaApp({ style, canvasStyle }) {
             shadows
             // resize={{ scroll: true, debounce: { scroll: 50, resize: 0 } }}
             camera={{
-              position: isMobile ? [-1.5, 12, 25] : [-1.5, 10.5, 22],
+              position: isMobile ? [-1.5, 15, 25] : [-1.5, 10.5, 22],
               fov: isMobile ? 18 : 18,
             }}
             gl={{
