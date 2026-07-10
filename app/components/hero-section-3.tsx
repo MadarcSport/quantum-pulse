@@ -5,7 +5,17 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import CanvaApp2 from "../canva/CanvaApp2";
 
-export function HeroSection3() {
+type HeroSection3Props = {
+  kicker?: string;
+  title?: string;
+  description?: string;
+};
+
+export function HeroSection3({
+  kicker = "React Three Fiber • drei • Draco-ready",
+  title = "Quantum Stocks",
+  description = "Selection of Stocks involved in Quantum Computing research, development, or applications.",
+}: HeroSection3Props) {
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -77,7 +87,7 @@ export function HeroSection3() {
             color: "#38bdf8",
           }}
         >
-          React Three Fiber • drei • Draco-ready
+          {kicker}
         </p>
         <h1
           ref={titleRef}
@@ -89,7 +99,7 @@ export function HeroSection3() {
             willChange: "transform, opacity, filter",
           }}
         >
-          Quantum Stocks
+          {title}
         </h1>
         <p
           style={{
@@ -100,8 +110,7 @@ export function HeroSection3() {
             color: "#cbd5e1",
           }}
         >
-          Selection of Stocks involved in Quantum Computing research,
-          development, or applications.
+          {description}
         </p>
       </div>
     </section>

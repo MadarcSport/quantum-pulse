@@ -10,7 +10,10 @@ export default async function NewsPage() {
   return (
     <main className={styles.pageRoot}>
       <section className={styles.pageShell}>
-        <HeroSection3 />
+        <HeroSection3
+          title="Quantum News"
+          description="Latest news and articles about quantum computing markets, companies, and technology."
+        />
 
         <header className={styles.pageHeader}>
           <div className={styles.bannerWrap}>

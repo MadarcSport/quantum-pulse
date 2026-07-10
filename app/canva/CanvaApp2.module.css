@@ -1,0 +1,141 @@
+.hudToggleButton {
+  --hud-accent: #38bdf8;
+  --hud-accent-strong: #00e5ff;
+  --hud-bg: rgba(2, 8, 23, 0.72);
+  --hud-panel: rgba(8, 47, 73, 0.42);
+
+  position: absolute;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 76px;
+  border: 1px solid rgba(125, 211, 252, 0.5);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, 0.2), transparent 46%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.82), var(--hud-bg));
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.1) inset,
+    0 0 14px rgba(0, 130, 252, 0.28),
+    0 8px 20px rgba(2, 6, 23, 0.38);
+  color: #e0faff;
+  cursor: pointer;
+  font-family: var(
+    --font-geist-mono,
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    monospace
+  );
+  font-size: var(--hud-font-size, 14px);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin: 5px;
+  overflow: hidden;
+  padding: var(--hud-padding, 10px 22px);
+  right: var(--hud-inset, 24px);
+  text-transform: uppercase;
+  top: var(--hud-inset, 24px);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    background 180ms ease;
+}
+
+.hudToggleButton::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.hudToggleButton:hover {
+  border-color: rgba(103, 232, 249, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(103, 232, 249, 0.2) inset,
+    0 0 20px rgba(0, 229, 255, 0.42),
+    0 10px 24px rgba(2, 6, 23, 0.45);
+  transform: translateY(-1px);
+}
+
+.hudToggleButton:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.hudToggleButtonOpen {
+  --hud-accent: #22d3ee;
+  --hud-accent-strong: #67e8f9;
+  --hud-bg: rgba(8, 13, 28, 0.84);
+  --hud-panel: rgba(15, 23, 42, 0.62);
+
+  border-color: rgba(34, 211, 238, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.18) inset,
+    0 0 16px rgba(34, 211, 238, 0.28),
+    0 8px 20px rgba(2, 6, 23, 0.46);
+}
+
+.hudStatusDot {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--hud-accent-strong);
+  box-shadow:
+    0 0 10px var(--hud-accent),
+    0 0 18px rgba(56, 189, 248, 0.58);
+}
+
+.hudStatusDot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border: 1px solid rgba(103, 232, 249, 0.36);
+  border-radius: inherit;
+  animation: hudPulse 1.8s ease-out infinite;
+}
+
+.hudTextStack {
+  display: grid;
+  gap: 1px;
+  line-height: 1;
+  text-align: left;
+}
+
+.hudKicker {
+  color: rgba(186, 230, 253, 0.68);
+  font-size: 0.62em;
+  letter-spacing: 0.24em;
+}
+
+.hudLabel {
+  color: #f0fdff;
+  text-shadow: 0 0 8px rgba(103, 232, 249, 0.52);
+}
+
+.hudBracket {
+  color: var(--hud-accent-strong);
+  font-weight: 900;
+  opacity: 0.9;
+}
+
+@keyframes hudPulse {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.75);
+  }
+
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+}

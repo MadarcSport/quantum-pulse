@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { MoreStocksButton } from "./components/more-stocks-button";
 import { NewsPreviewSection } from "./components/news-preview-section";
 import { StockSnapshotSection } from "./components/stock-snapshot-section";
+import stockSnapshotStyles from "./components/stock-snapshot-section.module.css";
 import {
   fetchAverageVolume7d,
   fetchAverageVolume90d,
@@ -16,30 +17,135 @@ import { HeroSection3 } from "./components/hero-section-3";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-function StockPreviewFallback() {
+function SkeletonBar({
+  width,
+  height = 12,
+}: {
+  width: string;
+  height?: number;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: "block",
+        width,
+        height,
+        borderRadius: 999,
+        background:
+          "linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(56, 189, 248, 0.22), rgba(148, 163, 184, 0.18))",
+      }}
+    />
+  );
+}
+
+function StockPreviewSkeletonCard({ index }: { index: number }) {
+  const statWidths = ["62%", "44%", "48%", "58%", "68%", "52%", "46%", "38%"];
+
   return (
     <section
-      style={{
-        border: "1px solid rgba(148, 163, 184, 0.2)",
-        borderRadius: 16,
-        background: "rgba(15, 23, 42, 0.72)",
-        padding: 20,
-      }}
+      className={stockSnapshotStyles.sectionCard}
       aria-label="Loading stock preview"
+      aria-busy="true"
     >
-      <p
-        style={{
-          margin: 0,
-          color: "#94a3b8",
-          fontSize: 14,
-          fontWeight: 700,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-        }}
-      >
-        Loading stock data…
-      </p>
+      <div className={stockSnapshotStyles.headerRow}>
+        <div className={stockSnapshotStyles.titleWrap}>
+          <div className={stockSnapshotStyles.titleRow}>
+            <span
+              className={stockSnapshotStyles.logoFallback}
+              aria-hidden="true"
+            >
+              {index + 1}
+            </span>
+            <div className={stockSnapshotStyles.nameBlock}>
+              <SkeletonBar width="72px" height={20} />
+              <SkeletonBar width="180px" height={12} />
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className={stockSnapshotStyles.chartButton}
+          disabled
+          aria-hidden="true"
+          tabIndex={-1}
+          style={{ opacity: 0.6 }}
+        >
+          Chart
+        </button>
+      </div>
+
+      <div className={stockSnapshotStyles.desktopStatsGrid}>
+        {statWidths.map((width, statIndex) => (
+          <div key={statIndex} className={stockSnapshotStyles.statItem}>
+            <SkeletonBar width="58%" height={10} />
+            <SkeletonBar width={width} height={16} />
+          </div>
+        ))}
+      </div>
+
+      <div className={stockSnapshotStyles.mobileStatsWrap}>
+        <div className={stockSnapshotStyles.statsGrid}>
+          {statWidths.slice(0, 2).map((width, statIndex) => (
+            <div key={statIndex} className={stockSnapshotStyles.statItem}>
+              <SkeletonBar width="58%" height={10} />
+              <SkeletonBar width={width} height={16} />
+            </div>
+          ))}
+        </div>
+
+        <div className={stockSnapshotStyles.mobileToggleWrap}>
+          <button
+            type="button"
+            className={stockSnapshotStyles.showMoreButton}
+            disabled
+            aria-hidden="true"
+            tabIndex={-1}
+            style={{ opacity: 0.6 }}
+          >
+            Show more
+          </button>
+        </div>
+      </div>
+
+      <div className={stockSnapshotStyles.forecastWrap}>
+        <SkeletonBar width="220px" height={13} />
+        <div className={stockSnapshotStyles.statItem}>
+          <SkeletonBar width="35%" height={10} />
+          <SkeletonBar width="70%" height={16} />
+        </div>
+      </div>
     </section>
+  );
+}
+
+function StockPreviewFallback({
+  enabledStocks,
+}: {
+  enabledStocks: ReturnType<typeof getEnabledStocks>;
+}) {
+  const previewCount = Math.min(enabledStocks.length, 3);
+  const skeletonCount = previewCount > 0 ? previewCount : 1;
+
+  return (
+    <>
+      {Array.from({ length: skeletonCount }, (_, index) => (
+        <StockPreviewSkeletonCard key={index} index={index} />
+      ))}
+
+      {enabledStocks.length > previewCount ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 42,
+          }}
+          aria-hidden="true"
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -140,9 +246,14 @@ export default function Home() {
         }}
       >
         {/* <CanvaApp /> */}
-        <HeroSection3 />
+        <HeroSection3
+          title="Quantum Computing"
+          description="Selection of Stocks involved in Quantum Computing research, development, or applications."
+        />
 
-        <Suspense fallback={<StockPreviewFallback />}>
+        <Suspense
+          fallback={<StockPreviewFallback enabledStocks={enabledStocks} />}
+        >
           <StockPreviewSections enabledStocks={enabledStocks} />
         </Suspense>
 

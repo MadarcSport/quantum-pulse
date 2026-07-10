@@ -73,7 +73,10 @@ export default async function StocksPage() {
           gap: 28,
         }}
       >
-        <HeroSection3 />
+        <HeroSection3
+          title="Quantum Stocks"
+          description="Selection of Stocks involved in Quantum Computing research, development, or applications."
+        />
 
         {stocksForClient.length > 0 ? (
           <StocksPageClient stocks={stocksForClient} />

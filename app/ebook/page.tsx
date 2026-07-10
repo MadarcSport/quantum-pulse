@@ -6,7 +6,10 @@ export default function EbookPage() {
     <main
       style={{ padding: "32px 24px 48px", maxWidth: 1180, margin: "0 auto" }}
     >
-      <HeroSection3 />
+      <HeroSection3
+        title="Quantum Ebook"
+        description="Explore the ebook preview and learning resources for quantum computing stocks."
+      />
 
       <h1
         style={{

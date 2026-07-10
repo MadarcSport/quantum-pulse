@@ -14,6 +14,7 @@ import {
   DoubleSide,
   Group,
   SRGBColorSpace,
+  type Side,
   Texture,
   TextureLoader,
 } from "three";
@@ -21,32 +22,40 @@ import styles from "./ebook-book-preview.module.css";
 
 const EBOOK_COVER_URL =
   "https://res.cloudinary.com/db7i9febj/image/upload/v1781964036/bookCov001_wkq1dz.png";
+const EBOOK_PAGE_URLS = [
+  "https://res.cloudinary.com/db7i9febj/image/upload/v1783653769/p1_m5pbaq.png",
+  "https://res.cloudinary.com/db7i9febj/image/upload/v1783653772/p2_sgegsn.png",
+  "https://res.cloudinary.com/db7i9febj/image/upload/v1783653772/p3_pqpohj.png",
+  "https://res.cloudinary.com/db7i9febj/image/upload/v1783653767/p4_h106hm.png",
+  "https://res.cloudinary.com/db7i9febj/image/upload/v1783653771/p5_dkiano.png",
+];
 const PAGE_COUNT = 9;
 const BOOK_WIDTH = 1.4;
 const BOOK_HEIGHT = 2.0;
-const COVER_THICKNESS = 0.04;
+const COVER_THICKNESS = 0.025;
 const PAGE_THICKNESS = 0.002;
 const SPINE_WIDTH = 0.1;
 const SPINE_DEPTH = 0.1;
 const PAGE_WIDTH = BOOK_WIDTH * 1.1;
 const PAGE_HEIGHT = BOOK_HEIGHT * 1.01;
 const PAGE_GUTTER = 0.012;
+const SURFACE_TEXTURE_OFFSET = 0.003;
 
-const FRONT_COVER_ROTATION = -0.1;
+const FRONT_COVER_ROTATION = 0.1;
 const BACK_COVER_ROTATION = 0.18;
 const FIRST_TURNED_PAGE_ROTATION = -2.88;
 const LAST_UNTURNED_PAGE_ROTATION = -0.08;
 
-// Add your PNG/JPG URLs here later. Examples:
-// front: "/ebook/front-cover.png"
-// pageTextures: ["/ebook/page-01.png", "/ebook/page-02.png", ...]
 const bookTextureSources = {
   cover: {
     front: EBOOK_COVER_URL,
     back: "",
     spine: "",
   },
-  pages: Array.from({ length: PAGE_COUNT }, () => ""),
+  pages: Array.from(
+    { length: PAGE_COUNT },
+    (_, pageIndex) => EBOOK_PAGE_URLS[pageIndex % EBOOK_PAGE_URLS.length],
+  ),
 };
 
 type CoverTextureSources = {
@@ -71,6 +80,7 @@ type MaterialSlotProps = {
   color: string;
   roughness?: number;
   metalness?: number;
+  side?: Side;
 };
 
 function TexturedMaterial({
@@ -78,6 +88,7 @@ function TexturedMaterial({
   color,
   roughness = 0.72,
   metalness = 0.02,
+  side = DoubleSide,
 }: MaterialSlotProps) {
   if (!src) {
     return (
@@ -85,7 +96,7 @@ function TexturedMaterial({
         color={color}
         roughness={roughness}
         metalness={metalness}
-        side={DoubleSide}
+        side={side}
       />
     );
   }
@@ -96,6 +107,7 @@ function TexturedMaterial({
       color={color}
       roughness={roughness}
       metalness={metalness}
+      side={side}
     />
   );
 }
@@ -105,7 +117,8 @@ function LoadedTextureMaterial({
   color,
   roughness = 0.72,
   metalness = 0.02,
-}: Required<MaterialSlotProps>) {
+  side = DoubleSide,
+}: MaterialSlotProps & { src: string }) {
   const [texture, setTexture] = useState<Texture | null>(null);
 
   useEffect(() => {
@@ -140,8 +153,99 @@ function LoadedTextureMaterial({
       color={color}
       roughness={roughness}
       metalness={metalness}
-      side={DoubleSide}
+      side={side}
     />
+  );
+}
+
+function SurfaceTextureMaterial({ src, side = DoubleSide }: MaterialSlotProps) {
+  const [texture, setTexture] = useState<Texture | null>(null);
+
+  useEffect(() => {
+    if (!src) {
+      setTexture(null);
+      return;
+    }
+
+    let isMounted = true;
+    const loader = new TextureLoader();
+
+    loader.load(
+      src,
+      (loadedTexture) => {
+        if (!isMounted) return;
+        loadedTexture.colorSpace = SRGBColorSpace;
+        loadedTexture.anisotropy = 8;
+        loadedTexture.needsUpdate = true;
+        setTexture(loadedTexture);
+      },
+      undefined,
+      () => {
+        if (!isMounted) return;
+        console.warn("Ebook surface texture failed to load:", src);
+        setTexture(null);
+      },
+    );
+
+    return () => {
+      isMounted = false;
+    };
+  }, [src]);
+
+  if (!texture) {
+    return null;
+  }
+
+  return (
+    <meshBasicMaterial
+      map={texture}
+      polygonOffset
+      polygonOffsetFactor={-2}
+      polygonOffsetUnits={-2}
+      side={side}
+      toneMapped={false}
+    />
+  );
+}
+
+function PageTextureOverlays({ src }: { src?: string }) {
+  if (!src) return null;
+
+  return (
+    <>
+      <mesh
+        name="page-texture-front-overlay"
+        position={[PAGE_WIDTH / 2, 0, SURFACE_TEXTURE_OFFSET]}
+        renderOrder={10}
+      >
+        <planeGeometry args={[PAGE_WIDTH, PAGE_HEIGHT, 1, 1]} />
+        <SurfaceTextureMaterial src={src} side={DoubleSide} color="#ffffff" />
+      </mesh>
+      <mesh
+        name="page-texture-back-overlay"
+        position={[PAGE_WIDTH / 2, 0, -SURFACE_TEXTURE_OFFSET]}
+        renderOrder={10}
+      >
+        <planeGeometry args={[PAGE_WIDTH, PAGE_HEIGHT, 1, 1]} />
+        <SurfaceTextureMaterial src={src} side={DoubleSide} color="#ffffff" />
+      </mesh>
+    </>
+  );
+}
+
+function CoverTextureOverlays({ src }: { src?: string }) {
+  if (!src) return null;
+
+  return (
+    <mesh
+      name="cover-texture-front-overlay"
+      position={[0, 0, -COVER_THICKNESS / 2 - SURFACE_TEXTURE_OFFSET]}
+      rotation={[0, Math.PI, 0]}
+      renderOrder={10}
+    >
+      <planeGeometry args={[BOOK_WIDTH, BOOK_HEIGHT, 1, 1]} />
+      <SurfaceTextureMaterial src={src} side={DoubleSide} color="#ffffff" />
+    </mesh>
   );
 }
 
@@ -231,11 +335,8 @@ const BookModel = forwardRef<BookModelApi, BookModelProps>(function BookModel(
               receiveShadow
             >
               <boxGeometry args={[BOOK_WIDTH, BOOK_HEIGHT, COVER_THICKNESS]} />
-              <TexturedMaterial
-                src={coverTextureState.front}
-                color="#ffffff"
-                roughness={0.46}
-              />
+              <TexturedMaterial color="#ffffff" roughness={0.46} />
+              <CoverTextureOverlays src={coverTextureState.front} />
             </mesh>
           </group>
 
@@ -291,11 +392,9 @@ const BookModel = forwardRef<BookModelApi, BookModelProps>(function BookModel(
                   receiveShadow
                 >
                   <planeGeometry args={[PAGE_WIDTH, PAGE_HEIGHT, 1, 1]} />
-                  <TexturedMaterial
-                    src={pageTextureState[pageIndex]}
-                    color="#fffdf5"
-                  />
+                  <TexturedMaterial color="#fffdf5" />
                 </mesh>
+                <PageTextureOverlays src={pageTextureState[pageIndex]} />
               </group>
             );
           })}
@@ -312,7 +411,11 @@ function PreviewTable() {
         <strong>Texture slots ready:</strong> front cover, back cover, spine,
         and 10 page textures.
       </div>
-      <div>The Cloudinary cover is now mapped onto the front cover plane.</div>
+      <div>
+        The Cloudinary cover is mapped onto the front cover, and the supplied
+        page PNGs are mapped onto the existing page meshes without changing the
+        book position or disposition.
+      </div>
     </div>
   );
 }
@@ -326,7 +429,7 @@ export function EbookBookPreview() {
         <p>
           The model is already split into cover meshes and 10 independently
           addressable page meshes, so each PNG/JPG layout can be mapped to the
-          correct page later.
+          correct page surface.
         </p>
         <PreviewTable />
       </div>

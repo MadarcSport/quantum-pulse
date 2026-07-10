@@ -6,6 +6,7 @@ import Scene2 from "./Scene2";
 import * as THREE from "three";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CanvasErrorBoundary from "./CanvasErrorBoundary";
+import styles from "./CanvaApp2.module.css";
 
 const MENU_ROTATIONS = {
   home: 0,
@@ -101,9 +102,9 @@ export default function CanvaApp2({ style, canvasStyle }) {
   const navButtonGlow = isMobile
     ? "0 0 12px rgba(0, 130, 252, 0.65)"
     : "0 0 18px rgba(0, 130, 252, 0.65)";
-  const toggleButtonInset = isMobile ? 12 : 24;
-  const toggleButtonFontSize = isMobile ? 12 : 14;
-  const toggleButtonPadding = isMobile ? "8px 16px" : "10px 22px";
+  const toggleButtonInset = isMobile ? 12 : 25;
+  const toggleButtonFontSize = isMobile ? 11 : 16;
+  const toggleButtonPadding = isMobile ? "6px 10px" : "10px 16px";
 
   const isViewportReady = isMobile !== null;
   // const cameraPosition = [-1.5, 10.5, 22];
@@ -191,28 +192,20 @@ export default function CanvaApp2({ style, canvasStyle }) {
         <button
           type="button"
           onClick={() => setTopGroupOpen((current) => !current)}
+          className={`${styles.hudToggleButton} ${topGroupOpen ? styles.hudToggleButtonOpen : ""}`}
           style={{
-            position: "absolute",
-            top: `${toggleButtonInset}px`,
-            right: `${toggleButtonInset}px`,
-            zIndex: 10,
-            background: topGroupOpen ? "#111827" : "#0082fc",
-            border: "1px solid rgba(255, 255, 255, 0.45)",
-            borderRadius: "999px",
-            boxShadow: topGroupOpen
-              ? "0 0 18px rgba(17, 24, 39, 0.65)"
-              : "0 0 18px rgba(0, 130, 252, 0.65)",
-            color: "white",
-            cursor: "pointer",
-            fontSize: `${toggleButtonFontSize}px`,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            margin: "5px",
-            padding: toggleButtonPadding,
-            textTransform: "uppercase",
+            "--hud-font-size": `${toggleButtonFontSize}px`,
+            "--hud-inset": `${toggleButtonInset}px`,
+            "--hud-padding": toggleButtonPadding,
           }}
+          aria-pressed={topGroupOpen}
         >
-          {topGroupOpen ? "close" : "open"}
+          <span className={styles.hudStatusDot} aria-hidden="true" />
+          <span className={styles.hudTextStack}>
+            <span className={styles.hudLabel}>
+              {topGroupOpen ? "Close" : "Open"}
+            </span>
+          </span>
         </button>
 
         <button
