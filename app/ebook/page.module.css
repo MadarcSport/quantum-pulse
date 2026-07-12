@@ -1,0 +1,19 @@
+.bannerWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1200 / 480;
+  margin-top: 44px;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.bannerImage {
+  object-fit: contain;
+}
+
+@media (max-width: 1200px) {
+  .bannerWrap {
+    /* aspect-ratio: 16 / 7; */
+    aspect-ratio: 1200 / 480;
+  }
+}

@@ -1,0 +1,114 @@
+.preview {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(320px, 1.2fr);
+  gap: 28px;
+  align-items: stretch;
+  margin-top: 34px;
+  padding: 22px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 28px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(59, 130, 246, 0.18),
+      transparent 42%
+    ),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.92));
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+  color: #f8fafc;
+  overflow: hidden;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 420px;
+  padding: clamp(8px, 2vw, 24px);
+}
+
+.eyebrow {
+  width: fit-content;
+  margin: 0 0 14px;
+  padding: 7px 11px;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.12);
+  color: #bae6fd;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.copy h2 {
+  margin: 0;
+  max-width: 12ch;
+  color: #ffffff;
+  font-size: clamp(2rem, 4vw, 3.65rem);
+  line-height: 0.96;
+  letter-spacing: -0.055em;
+}
+
+.copy p:not(.eyebrow) {
+  max-width: 520px;
+  margin: 18px 0 0;
+  color: #cbd5e1;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.notes {
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.12);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.52);
+  color: #dbeafe;
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.notes code {
+  border-radius: 8px;
+  padding: 2px 6px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #bfdbfe;
+  font-size: 0.88em;
+}
+
+.canvasWrap {
+  min-height: 520px;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 24px;
+  background: #07111f;
+  overflow: hidden;
+}
+
+.canvas {
+  height: 100% !important;
+  min-height: 520px;
+  width: 100% !important;
+}
+
+@media (max-width: 860px) {
+  .preview {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .copy {
+    min-height: auto;
+  }
+
+  .copy h2 {
+    max-width: 15ch;
+  }
+
+  .canvasWrap,
+  .canvas {
+    min-height: 420px;
+  }
+}

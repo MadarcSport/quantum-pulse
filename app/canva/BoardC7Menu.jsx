@@ -4,8 +4,11 @@ Command: npx gltfjsx@6.5.3 public/boardC7.glb -o src/BoardC7.jsx
 */
 
 import React from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
+import * as THREE from "three";
+import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { createCopperMaterial2 } from "./materials/copperMaterial2";
 import { createCopperMaterial } from "./materials/copperMaterial";
 import { createElectricSweepMaterial } from "./materials/electricSweepMaterial";
 import { createElectricSweepMaterial2 } from "./materials/electricSweepMaterial2";
@@ -15,6 +18,7 @@ import {
   createGlowBlueOuterMaterial,
 } from "./materials/glowBlueMaterial";
 import { createGoldMaterial } from "./materials/goldMaterial";
+import { createGoldMaterial2 } from "./materials/goldMaterial2";
 import { createHologramMaterial } from "./materials/hologramMaterial";
 import { createIronBlackMaterial } from "./materials/ironBlackMaterial";
 import { createIronMaterial } from "./materials/ironMaterial";
@@ -29,6 +33,8 @@ const BOARD_C7_DEFAULT_URL =
   process.env.NEXT_PUBLIC_BOARD_C7_MODEL === "classic"
     ? BOARD_C7_FALLBACK_URL
     : BOARD_C7_CPU_URL;
+const COPPER_LOCKED_HDR_URL = new URL("./assets/ferndale2.hdr", import.meta.url)
+  .href;
 
 export const BoardC7Menu = React.forwardRef(function BoardC7Menu(props, ref) {
   const modelUrl = useSafeBoardC7ModelUrl();
@@ -91,6 +97,16 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
   ref,
 ) {
   const { nodes, materials } = useGLTF(modelUrl);
+  const { gl } = useThree();
+  const copperLockedHdrTexture = useLoader(RGBELoader, COPPER_LOCKED_HDR_URL);
+  const copperLockedEnvMapTarget = React.useMemo(() => {
+    const pmremGenerator = new THREE.PMREMGenerator(gl);
+    const target = pmremGenerator.fromEquirectangular(copperLockedHdrTexture);
+
+    pmremGenerator.dispose();
+
+    return target;
+  }, [copperLockedHdrTexture, gl]);
   const topGroupRef = React.useRef();
   const topRotationRef = React.useRef();
   const eliseRefs = React.useRef([]);
@@ -101,6 +117,10 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
   const pbrMaterial = materials.PBR;
   const goldMaterial = React.useMemo(
     () => createGoldMaterial(baseMaterial),
+    [baseMaterial],
+  );
+  const goldMaterial2 = React.useMemo(
+    () => createGoldMaterial2(baseMaterial),
     [baseMaterial],
   );
   const ironMaterial = React.useMemo(
@@ -118,6 +138,14 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
   const copperMaterial = React.useMemo(
     () => createCopperMaterial(baseMaterial),
     [baseMaterial],
+  );
+  const copperMaterial2 = React.useMemo(
+    () =>
+      createCopperMaterial2(baseMaterial, {
+        envMap: copperLockedEnvMapTarget.texture,
+        envMapIntensity: 0.35,
+      }),
+    [baseMaterial, copperLockedEnvMapTarget],
   );
   const glowBlueMaterial = React.useMemo(() => createGlowBlueMaterial(), []);
   const glowBlueOuterMaterial = React.useMemo(
@@ -144,6 +172,12 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
   );
   const floatingSteam = React.useMemo(() => <FloatingSteam />, []);
   const floatingSteam2 = React.useMemo(() => <FloatingSteam2 />, []);
+
+  React.useEffect(() => {
+    return () => {
+      copperLockedEnvMapTarget.dispose();
+    };
+  }, [copperLockedEnvMapTarget]);
 
   React.useEffect(() => {
     if (onModelReady) {
@@ -174,7 +208,7 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
 
   // Ready-to-use material variables:
   // baseMaterial, pbrMaterial, goldMaterial, ironMaterial, ironBlackMaterial,
-  // copperMaterial, glowBlueMaterial, glowBlueOuterMaterial, hologramMaterial,
+  // copperMaterial2, glowBlueMaterial, glowBlueOuterMaterial, hologramMaterial,
   // electricSweepMaterial.
   // Replace any mesh material with one of these according to your needs.
 
@@ -245,9 +279,10 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
             />
             <mesh
               geometry={nodes.behindTextMenu.geometry}
-              material={copperMaterial}
+              material={copperMaterial2}
               position={[212.253, -312.71, -384.497]}
             />
+
             <mesh
               geometry={nodes.homeTExt.geometry}
               material={glowBlueMaterial}
@@ -486,9 +521,10 @@ const BoardC7MenuModel = React.forwardRef(function BoardC7MenuModel(
         />
         <mesh
           geometry={nodes.puce.geometry}
-          material={copperMaterial}
+          material={copperMaterial2}
           position={[-154.039, 308.983, 385.068]}
         />
+
         <mesh
           geometry={nodes.coqueFan.geometry}
           material={blackPlasticMaterial}

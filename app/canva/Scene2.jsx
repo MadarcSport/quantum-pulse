@@ -166,7 +166,10 @@ export default function Scene2({
                 mat.map.needsUpdate = true;
               }
 
-              if ("envMapIntensity" in mat) {
+              if (
+                "envMapIntensity" in mat &&
+                !mat.userData?.lockedHdrEnvironment
+              ) {
                 mat.envMapIntensity = getHdrMaterialIntensity(profileId);
               }
 

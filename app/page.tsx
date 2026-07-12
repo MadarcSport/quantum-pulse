@@ -1,8 +1,10 @@
 // import { CanvaApp } from "./canva/index";
 // import { BoardCanvas } from "./BoardCanvas";
 import { Suspense } from "react";
+import { EbookPreviewSection } from "./components/ebook-preview-section";
 import { MoreStocksButton } from "./components/more-stocks-button";
 import { NewsPreviewSection } from "./components/news-preview-section";
+import previewStyles from "./components/news-preview-section.module.css";
 import { StockSnapshotSection } from "./components/stock-snapshot-section";
 import stockSnapshotStyles from "./components/stock-snapshot-section.module.css";
 import {
@@ -251,14 +253,27 @@ export default function Home() {
           description="Selection of Stocks involved in Quantum Computing research, development, or applications."
         />
 
-        <Suspense
-          fallback={<StockPreviewFallback enabledStocks={enabledStocks} />}
-        >
-          <StockPreviewSections enabledStocks={enabledStocks} />
-        </Suspense>
+        <section className={previewStyles.section} aria-label="Stocks preview">
+          <div className={previewStyles.header}>
+            <div className={previewStyles.headerText}>
+              <p className={previewStyles.kicker}>Stocks Preview</p>
+              <h2 className={previewStyles.title}>Featured Quantum Stocks</h2>
+            </div>
+          </div>
+
+          <Suspense
+            fallback={<StockPreviewFallback enabledStocks={enabledStocks} />}
+          >
+            <StockPreviewSections enabledStocks={enabledStocks} />
+          </Suspense>
+        </section>
 
         <div style={{ marginTop: 20 }}>
           <NewsPreviewSection />
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <EbookPreviewSection />
         </div>
 
         <p
