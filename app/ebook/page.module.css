@@ -17,3 +17,20 @@
     aspect-ratio: 1200 / 480;
   }
 }
+
+@media (max-width: 640px) {
+  /*The desktop size is unchanged because this rule only applies under 640px*/
+  .bannerWrap {
+    /* height: clamp(260px, 82vw, 380px); */
+    height: clamp(220px, 52vw, 230px);
+    /* height: clamp(320px, 100vw, 480px); */
+
+    aspect-ratio: auto;
+    margin-top: 28px;
+  }
+
+  .bannerImage {
+    object-fit: cover;
+    object-position: center;
+  }
+}

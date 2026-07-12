@@ -1,9 +1,9 @@
 "use client";
 
-import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import {
   forwardRef,
+  type PointerEvent as ReactPointerEvent,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -409,27 +409,53 @@ function PreviewTable() {
     <div className={styles.notes} aria-label="Book model structure">
       <div>
         <strong>Texture slots ready:</strong> front cover, back cover, spine,
-        and 10 page textures.
+        and 9 page textures.
       </div>
       <div>
-        The Cloudinary cover is mapped onto the front cover, and the supplied
-        page PNGs are mapped onto the existing page meshes without changing the
-        book position or disposition.
+        Drag left or right to spin the book in place. The camera position is
+        fixed, zoom is disabled, and vertical dragging does not move the view.
       </div>
     </div>
   );
 }
 
 export function EbookBookPreview2() {
+  const spinGroupRef = useRef<Group>(null);
+  const dragStateRef = useRef({ isDragging: false, pointerId: -1 });
+
+  const stopDragging = (event: ReactPointerEvent) => {
+    const { pointerId } = dragStateRef.current;
+
+    if (pointerId !== -1 && event.currentTarget.hasPointerCapture(pointerId)) {
+      event.currentTarget.releasePointerCapture(pointerId);
+    }
+
+    dragStateRef.current = { isDragging: false, pointerId: -1 };
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent) => {
+    dragStateRef.current = { isDragging: true, pointerId: event.pointerId };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent) => {
+    const { isDragging, pointerId } = dragStateRef.current;
+
+    if (!isDragging || event.pointerId !== pointerId || !spinGroupRef.current) {
+      return;
+    }
+
+    spinGroupRef.current.rotation.y += event.movementX * 0.01;
+  };
+
   return (
     <section className={styles.preview} aria-label="Interactive ebook preview">
       <div className={styles.copy}>
         <p className={styles.eyebrow}>Ebook preview</p>
         <h2>Preview the guide as a lightweight 3D book.</h2>
         <p>
-          The model is already split into cover meshes and 10 independently
-          addressable page meshes, so each PNG/JPG layout can be mapped to the
-          correct page surface.
+          Drag horizontally to rotate the book itself while the camera stays
+          locked in place. Zooming, panning, and camera orbiting are disabled.
         </p>
         <PreviewTable />
       </div>
@@ -440,6 +466,11 @@ export function EbookBookPreview2() {
           shadows
           dpr={[1, 2]}
           className={styles.canvas}
+          onLostPointerCapture={stopDragging}
+          onPointerCancel={stopDragging}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={stopDragging}
         >
           <color attach="background" args={["#07111f"]} />
           <ambientLight intensity={1.65} />
@@ -449,7 +480,9 @@ export function EbookBookPreview2() {
             intensity={1.1}
             color="#93c5fd"
           />
-          <BookModel />
+          <group ref={spinGroupRef}>
+            <BookModel />
+          </group>
           <mesh
             rotation={[-Math.PI / 2, 0, 0]}
             position={[0, -1.52, 0]}
@@ -458,7 +491,6 @@ export function EbookBookPreview2() {
             <planeGeometry args={[7, 6]} />
             <shadowMaterial opacity={0.22} />
           </mesh>
-          <OrbitControls enablePan={false} minDistance={4} maxDistance={8} />
         </Canvas>
       </div>
     </section>
