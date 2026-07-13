@@ -412,7 +412,7 @@ function PreviewTable() {
         and 9 page textures.
       </div>
       <div>
-        Drag left or right to spin the book in place. The camera position is
+        Drag left or right to spin the book in place... The camera position is
         fixed, zoom is disabled, and vertical dragging does not move the view.
       </div>
     </div>
