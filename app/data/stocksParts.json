@@ -1,0 +1,59 @@
+[
+  {
+    "symbol": "QUBT",
+    "name": "Quantum Computing Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/quantum-computing--big.svg",
+    "Primary Quantum Layer": " Software ",
+    "Secondary Quantum Layer": " Stack Applications "
+  },
+  {
+    "symbol": "RGTI",
+    "name": "Rigetti Computing Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/rigetti-computing-redeemable--big.svg"
+  },
+  {
+    "symbol": "QBTS",
+    "name": "D-Wave Quantum Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/d-wave-quantum--big.svg"
+  },
+  {
+    "symbol": "XNDU",
+    "name": "Xanadu Quantum Technologies Limited.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/xanadu-quantum-technologies-limited-class-b--big.svg"
+  },
+  {
+    "symbol": "IONQ",
+    "name": "IonQ Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/ionq--big.svg"
+  },
+  {
+    "symbol": "INFQ",
+    "name": "Inflection Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/infleqtion--big.svg"
+  },
+  {
+    "symbol": "ARQQ",
+    "name": "Arqit Quantum Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/arqit-quantum--big.svg"
+  },
+  {
+    "symbol": "LAES",
+    "name": "SEALSQ Corporation",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/sealsq--big.svg"
+  },
+  {
+    "symbol": "PLAB",
+    "name": "Photronics Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/photronics--big.svg"
+  },
+  {
+    "symbol": "QNT",
+    "name": "Quantinuum Inc.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/quantinuum--big.svg"
+  },
+  {
+    "symbol": "HQ",
+    "name": "Horizon Quantum Holdings Ltd.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/horizon-quantum-ltd-class-a--big.svg"
+  }
+]

@@ -68,5 +68,12 @@
     "logoUrl": "https://s3-symbol-logo.tradingview.com/quantinuum--big.svg",
     "enabled": true,
     "showChart": true
+  },
+  {
+    "symbol": "HQ",
+    "name": "Horizon Quantum Holdings Ltd.",
+    "logoUrl": "https://s3-symbol-logo.tradingview.com/horizon-quantum-ltd-class-a--big.svg",
+    "enabled": true,
+    "showChart": true
   }
 ]

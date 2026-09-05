@@ -38,6 +38,8 @@ const FILTER_OPTIONS: FilterOption[] = [
   { key: "mfVelocity", label: "MF Velocity" },
 ];
 
+const STOCKS_PER_PAGE = 10;
+
 function compareNullableDesc(a: number | null, b: number | null): number {
   if (a === null && b === null) {
     return 0;
@@ -57,6 +59,7 @@ function compareNullableDesc(a: number | null, b: number | null): number {
 export function StocksPageClient({ stocks }: { stocks: StocksPageStock[] }) {
   const [activeFilter, setActiveFilter] = useState<FilterKey | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const sortedStocks = useMemo(() => {
     if (activeFilter === null) {
@@ -80,6 +83,28 @@ export function StocksPageClient({ stocks }: { stocks: StocksPageStock[] }) {
   const activeLabel = FILTER_OPTIONS.find(
     (option) => option.key === activeFilter,
   )?.label;
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedStocks.length / STOCKS_PER_PAGE),
+  );
+  const paginatedStocks = sortedStocks.slice(
+    (currentPage - 1) * STOCKS_PER_PAGE,
+    currentPage * STOCKS_PER_PAGE,
+  );
+  const pageStart =
+    sortedStocks.length === 0 ? 0 : (currentPage - 1) * STOCKS_PER_PAGE + 1;
+  const pageEnd = Math.min(currentPage * STOCKS_PER_PAGE, sortedStocks.length);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   useEffect(() => {
     if (!isFilterOpen) {
@@ -197,7 +222,7 @@ export function StocksPageClient({ stocks }: { stocks: StocksPageStock[] }) {
       ) : null}
 
       <div style={{ display: "grid", gap: 28 }}>
-        {sortedStocks.map((stock) => (
+        {paginatedStocks.map((stock) => (
           <StockSnapshotSection
             key={stock.symbol}
             title={stock.symbol}
@@ -211,6 +236,53 @@ export function StocksPageClient({ stocks }: { stocks: StocksPageStock[] }) {
           />
         ))}
       </div>
+
+      {totalPages > 1 ? (
+        <nav className={styles.pagination} aria-label="Stock pages">
+          <p className={styles.paginationSummary}>
+            Showing {pageStart}-{pageEnd} of {sortedStocks.length} stocks
+          </p>
+
+          <div className={styles.paginationControls}>
+            <button
+              type="button"
+              className={styles.paginationArrow}
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+              aria-label="Go to previous stock page"
+            >
+              ←
+            </button>
+
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+              (page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={`${styles.paginationPage} ${currentPage === page ? styles.paginationPageActive : ""}`}
+                  onClick={() => setCurrentPage(page)}
+                  aria-current={currentPage === page ? "page" : undefined}
+                  aria-label={`Go to stock page ${page}`}
+                >
+                  {page}
+                </button>
+              ),
+            )}
+
+            <button
+              type="button"
+              className={styles.paginationArrow}
+              onClick={() =>
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }
+              disabled={currentPage === totalPages}
+              aria-label="Go to next stock page"
+            >
+              →
+            </button>
+          </div>
+        </nav>
+      ) : null}
     </section>
   );
 }

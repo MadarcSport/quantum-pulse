@@ -6,7 +6,7 @@
 }
 
 .pageShell {
-  width: min(1040px, 100%);
+  width: min(1180px, 100%);
   margin: 0 auto;
   display: grid;
   gap: 24px;
@@ -20,7 +20,7 @@
 .bannerWrap {
   position: relative;
   width: 100%;
-  aspect-ratio: 1200 / 260;
+  aspect-ratio: 1200 / 480;
   border-radius: 20px;
   overflow: hidden;
   /* border: 1px solid rgba(148, 163, 184, 0.22); */
@@ -146,6 +146,7 @@
   min-height: calc(1.2em * 2);
   overflow: hidden;
   text-overflow: ellipsis;
+  line-clamp: 2;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -159,6 +160,7 @@
   display: -webkit-box;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-clamp: 4;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
 }
@@ -203,11 +205,13 @@
   text-align: center;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1200px) {
   .bannerWrap {
-    aspect-ratio: 16 / 7;
+    aspect-ratio: 1200 / 480;
   }
+}
 
+@media (max-width: 800px) {
   .newsGrid {
     grid-template-columns: 1fr;
   }
@@ -215,5 +219,19 @@
   .cardLink:hover .card,
   .cardLink:focus-visible .card {
     transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .bannerWrap {
+    width: 100%;
+    height: clamp(220px, 52vw, 230px);
+    aspect-ratio: auto;
+    margin-top: 28px;
+  }
+
+  .bannerImage {
+    object-fit: cover;
+    object-position: center;
   }
 }

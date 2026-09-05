@@ -18,10 +18,12 @@ export default async function NewsPage() {
         <header className={styles.pageHeader}>
           <div className={styles.bannerWrap}>
             <Image
-              src="https://res.cloudinary.com/db7i9febj/image/upload/v1781586843/topBannerFrame01_oj9vu2.png"
+              // src="https://res.cloudinary.com/db7i9febj/image/upload/v1781586843/topBannerFrame01_oj9vu2.png"
+              src="https://res.cloudinary.com/db7i9febj/image/upload/v1784003902/TNtopBannerNew_StandardPulse_hxapun.png"
               alt="Quantum industry news banner"
               fill
               sizes="100vw"
+              preload
               className={styles.bannerImage}
               unoptimized
             />

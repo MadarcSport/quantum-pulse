@@ -1,5 +1,3 @@
-// import { CanvaApp } from "./canva/index";
-// import { BoardCanvas } from "./BoardCanvas";
 import { Suspense } from "react";
 import { EbookPreviewSection } from "./components/ebook-preview-section";
 import { MoreStocksButton } from "./components/more-stocks-button";
@@ -247,7 +245,6 @@ export default function Home() {
           gap: 28,
         }}
       >
-        {/* <CanvaApp /> */}
         <HeroSection3
           title="Quantum Computing"
           description="Selection of Stocks involved in Quantum Computing research, development, or applications."
